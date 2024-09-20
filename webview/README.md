@@ -1,1 +1,0 @@
-The UI uses https://ui.shadcn.com/ library

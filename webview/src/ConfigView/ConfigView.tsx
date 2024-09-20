@@ -1,11 +1,10 @@
-import { Button } from "@/components/ui/button"
 
 const ConfigView = () => {
     return (
         <div>
-          <Button size="sm">Click me</Button>
+            <h1>ConfigView</h1>
         </div>
-      )
+    );
 };
 
 export default ConfigView;
