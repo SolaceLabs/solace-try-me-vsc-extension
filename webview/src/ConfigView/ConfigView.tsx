@@ -1,10 +1,11 @@
+import { Button } from "@nextui-org/button";
 
 const ConfigView = () => {
-    return (
-        <div>
-            <h1>ConfigView</h1>
-        </div>
-    );
+  return (
+    <div>
+      <Button>ConfigView</Button>
+    </div>
+  );
 };
 
 export default ConfigView;
