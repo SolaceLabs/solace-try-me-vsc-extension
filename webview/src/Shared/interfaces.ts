@@ -1,11 +1,15 @@
+
+export interface BrokerConfig {
+  id: string;
+  title: string;
+  url: string;
+  vpn: string;
+  username: string;
+  password: string;
+}
+
 export interface VscConfigInterface {
-  brokerConfigs: {
-    alias: string;
-    url: string;
-    vpn: string;
-    username: string;
-    password: string;
-  }[];
+  brokerConfigs: BrokerConfig[];
   recentlyUsed: {
     brokers: string[];
     subscribeTopics: string[];

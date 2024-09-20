@@ -1,10 +1,36 @@
 import { VscConfigInterface } from "./interfaces";
 
+// export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
+//     brokerConfigs: [],
+//     recentlyUsed: {
+//         brokers: [],
+//         subscribeTopics: [],
+//         publishTopics: []
+//     }
+// };
+
 export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
-    brokerConfigs: [],
-    recentlyUsed: {
-        brokers: [],
-        subscribeTopics: [],
-        publishTopics: []
-    }
+  brokerConfigs: [
+    {
+      id: "1234",
+      title: "Broker 1",
+      url: "tcp://localhost:1883",
+      vpn: "vpn1",
+      username: "user1",
+      password: "password1",
+    },
+    {
+      id: "4321",
+      title: "Broker 2",
+      url: "tcp://localhost:1884",
+      vpn: "vpn2",
+      username: "user2",
+      password: "password2",
+    },
+  ],
+  recentlyUsed: {
+    brokers: [],
+    subscribeTopics: [],
+    publishTopics: [],
+  },
 };

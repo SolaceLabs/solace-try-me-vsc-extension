@@ -47,12 +47,12 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this.context.extensionUri, "webview-dist")
     );
 
-    const jsUri =  vscode.Uri.joinPath(uriPrefix, "assets", "index.js");
+    const jsUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.js");
     const cssUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.css");
 
     return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" class="dark">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
