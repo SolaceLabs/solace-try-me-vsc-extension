@@ -1,26 +1,71 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  // Register the webview view provider
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      "solaceTryMeVscExtension.config",
+      new SolaceTryMeViewProvider(context, "config-panel")
+    )
+  );
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "solace-try-me-vsc-extension" is now active!');
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      "solaceTryMeVscExtension.subscribe",
+      new SolaceTryMeViewProvider(context, "subscribe-panel")
+    )
+  );
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('solace-try-me-vsc-extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Solace Try Me VSC Extension!');
-	});
-
-	context.subscriptions.push(disposable);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      "solaceTryMeVscExtension.publish",
+      new SolaceTryMeViewProvider(context, "publish-panel")
+    )
+  );
 }
 
-// This method is called when your extension is deactivated
+class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly viewType: string
+  ) {}
+
+  resolveWebviewView(webviewView: vscode.WebviewView) {
+    const { webview } = webviewView;
+
+    // Allow scripts in the webview
+    webview.options = {
+      enableScripts: true,
+    };
+
+    // Set the HTML content for the webview
+    webview.html = this.getHtmlForWebview(webview);
+  }
+
+  private getHtmlForWebview(webview: vscode.Webview): string {
+    const uriPrefix = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "webview-dist")
+    );
+
+    const jsUri =  vscode.Uri.joinPath(uriPrefix, "assets", "index.js");
+    const cssUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.css");
+
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Solace TryMe VSC Extension View</title>
+        <script type="module" crossorigin src="${jsUri}"></script>
+        <link rel="stylesheet" crossorigin href="${cssUri}">
+      </head>
+      <body>
+        <div id="${this.viewType}"></div>
+      </body>
+    </html>
+`;
+  }
+}
+
 export function deactivate() {}

@@ -3,6 +3,7 @@
   "displayName": "Solace Try Me VSC Extension",
   "description": "VSC built-in tool to visualize and observe events flowing through Solace event broker.",
   "version": "0.0.1",
+  "publisher": "Cyrus Mobini",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -12,18 +13,41 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "solace-try-me-vsc-extension.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "solaceTryMeVscExtension",
+          "title": "Solace Try Me",
+          "icon": "media/solace-logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "solaceTryMeVscExtension": [
+        {
+          "id": "solaceTryMeVscExtension.config",
+          "name": "Config",
+          "type": "webview"
+        },
+        {
+          "id": "solaceTryMeVscExtension.publish",
+          "name": "Publish",
+          "type": "webview"
+        },
+        {
+          "id": "solaceTryMeVscExtension.subscribe",
+          "name": "Subscribe",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
+    "build:view": "cd webview && npm i && npm run build", 
     "lint": "eslint src",
     "test": "vscode-test"
   },
