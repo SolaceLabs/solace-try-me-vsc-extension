@@ -60,7 +60,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
         <script type="module" crossorigin src="${jsUri}"></script>
         <link rel="stylesheet" crossorigin href="${cssUri}">
       </head>
-      <body>
+      <body class="dark">
         <div id="${this.viewType}"></div>
       </body>
     </html>
