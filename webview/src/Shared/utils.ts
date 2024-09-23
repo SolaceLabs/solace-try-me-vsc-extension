@@ -1,5 +1,5 @@
 import { VSC_CONFIG_DEFAULT } from "./constants";
-import { VscConfigInterface, VsCodeApi } from "./interfaces";
+import { BrokerConfig, VscConfigInterface, VsCodeApi } from "./interfaces";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -34,4 +34,15 @@ export function setVscConfig(
   const currentState = getVscConfig();
   const newState = updateStateCB(currentState);
   vscode.setState(newState);
+}
+
+export function compareBrokerConfigs(a: BrokerConfig, b: BrokerConfig) {
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.url === b.url &&
+    a.vpn === b.vpn &&
+    a.username === b.username &&
+    a.password === b.password
+  );
 }

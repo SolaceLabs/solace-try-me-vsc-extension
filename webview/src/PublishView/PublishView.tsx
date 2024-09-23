@@ -1,10 +1,20 @@
+import { useEffect, useState } from "react";
+
+import ConnectionManager from "../Shared/components/ConnectionManager";
+import SolaceManager from "../Shared/SolaceManager";
 
 const PublishView = () => {
-    return (
-        <div>
-            <h1>PublishView</h1>
-        </div>
-    );
+  const [solaceConnection, setSolaceConnection] = useState<SolaceManager>(null);
+
+  useEffect(() => {
+    console.log("Current broker:", solaceConnection);
+  }, [solaceConnection]);
+
+  return (
+    <div>
+      <ConnectionManager onSetConnection={setSolaceConnection} />
+    </div>
+  );
 };
 
 export default PublishView;

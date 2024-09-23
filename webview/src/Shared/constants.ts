@@ -27,6 +27,14 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
       username: "user2",
       password: "password2",
     },
+    {
+      id: "local123",
+      title: "Local",
+      url: "ws://localhost:8008",
+      vpn: "default",
+      username: "default",
+      password: "default",
+    },
   ],
   recentlyUsed: {
     brokers: [],
