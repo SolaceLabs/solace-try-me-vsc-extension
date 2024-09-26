@@ -13,7 +13,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
 
   const fetchBrokers = () => {
     // Fetch brokers from vscode
-    const state = getVscConfig();
+    const state = getVscConfig();    
     if (state && state.brokerConfigs) {
       setBrokers(state.brokerConfigs);
     }
@@ -35,7 +35,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
         label="Solace Broker Config"
         placeholder="Select a broker"
         className="max-w-xs"
-        onOpenChange={(open) => open && fetchBrokers()}
+        onClick={(open) => open && fetchBrokers()}
         onSelectionChange={(selection) => {
           const values = Array.from(selection);
           if (values.length > 0) {

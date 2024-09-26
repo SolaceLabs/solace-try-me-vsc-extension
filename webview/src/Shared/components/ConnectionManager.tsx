@@ -76,28 +76,28 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
 
   const buttonProps: {
     onClick: () => void;
-    color?: "success" | "danger";
+    color?: "success";
+    variant?: "bordered";
     startContent?: JSX.Element;
     children?: string;
     isLoading?: boolean;
     isDisabled?: boolean;
   } = {
     onClick: onToggleConnection,
+    color: "success",
   };
   switch (connectionState) {
     case ConnectionState.CONNECTED:
-      buttonProps.color = "danger";
+      buttonProps.variant="bordered";
       buttonProps.startContent = <Link2 size={24} />;
       buttonProps.children = "Disconnect";
       break;
     case ConnectionState.CONNECTING:
-      buttonProps.color = "success";
       buttonProps.isLoading = true;
       buttonProps.children = "Connecting";
       buttonProps.isDisabled = true;
       break;
     default:
-      buttonProps.color = "success";
       buttonProps.startContent = <Link2Off size={24} />;
       buttonProps.children = "Connect";
       buttonProps.isDisabled = !currentBroker;
@@ -105,7 +105,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
 
   return (
     <>
-      <div className="flex gap-2 items-center justify-between">
+      <div className="flex gap-2 items-center justify-between flex-wrap">
         <BrokerSelect onBrokerSelect={setCurrentBroker} />
         <Button {...buttonProps} />
       </div>
