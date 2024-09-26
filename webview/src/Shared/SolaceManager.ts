@@ -152,7 +152,7 @@ class SolaceManager {
       }
       message.setBinaryAttachment(content);
       this.session.send(message);
-      console.debug("Published message:", name, content);
+      console.debug("Published message:", name, content, options);
       return null
     } catch (publishError) {
       console.error("Error publishing message:", name, content, publishError);

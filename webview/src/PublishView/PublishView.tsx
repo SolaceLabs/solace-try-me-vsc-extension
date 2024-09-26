@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { RadioGroup, Radio, Input, Textarea, Button } from "@nextui-org/react";
+import {
+  RadioGroup,
+  Radio,
+  Input,
+  Textarea,
+  Button,
+  Accordion,
+  AccordionItem,
+  Switch,
+  Slider,
+} from "@nextui-org/react";
 
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
 import { DestinationType, MessageDeliveryModeType } from "solclientjs";
 import { PublishOptions } from "../Shared/interfaces";
-
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -19,6 +28,9 @@ const PublishView = () => {
     MessageDeliveryModeType.DIRECT
   );
   const [content, setContent] = useState<string>("");
+  const [advancedSettings, setAdvancedSettings] = useState<
+    Partial<PublishOptions>
+  >({});
 
   const disablePublish = !solaceConnection || !publishTo || !content;
 
@@ -73,11 +85,89 @@ const PublishView = () => {
           value={content}
           onValueChange={setContent}
         />
+        <Accordion
+          isCompact
+          onSelectionChange={(selectedKeys) => {
+            if (Array.from(selectedKeys).length) {
+              setAdvancedSettings({
+                dmqEligible: false,
+                priority: 0,
+              });
+            } else {
+              setAdvancedSettings({});
+            }
+          }}
+        >
+          <AccordionItem
+            key="advanced-settings"
+            aria-label="advanced settings"
+            subtitle="Advanced Settings"
+          >
+            <div className="flex flex-col gap-4 pl-2">
+              <Switch
+                isSelected={advancedSettings.dmqEligible}
+                onValueChange={(dmqEligible) =>
+                  setAdvancedSettings((prev) => ({ ...prev, dmqEligible }))
+                }
+              >
+                DMQ Eligible
+              </Switch>
+              <Slider
+                size="sm"
+                step={1}
+                label="Message Priority"
+                showSteps={true}
+                maxValue={9}
+                minValue={0}
+                defaultValue={1}
+                showTooltip={true}
+                value={advancedSettings.priority}
+                getValue={() => "Highest"}
+                onChange={(priority) =>
+                  setAdvancedSettings((prev) => ({
+                    ...prev,
+                    priority: Array.isArray(priority) ? priority[0] : priority,
+                  }))
+                }
+              />
+              <Input
+                label="Time to Live (sec)"
+                type="number"
+                min={0}
+                value={(advancedSettings.timeToLive || "") as unknown as string}
+                onValueChange={(timeToLive) =>
+                  setAdvancedSettings((prev) => ({
+                    ...prev,
+                    timeToLive: Number(timeToLive),
+                  }))
+                }
+              />
+              <Input
+                label="Reply To Topic"
+                value={advancedSettings.replyToTopic || ""}
+                onValueChange={(replyToTopic) =>
+                  setAdvancedSettings((prev) => ({ ...prev, replyToTopic }))
+                }
+              />
+              <Input
+                label="Correlation ID"
+                value={advancedSettings.correlationId || ""}
+                onValueChange={(correlationId) =>
+                  setAdvancedSettings((prev) => ({ ...prev, correlationId }))
+                }
+              />
+            </div>
+          </AccordionItem>
+        </Accordion>
         <Button
           color="success"
           isDisabled={disablePublish}
           onClick={() => {
-            const options: PublishOptions = { deliveryMode, destinationType };
+            const options: PublishOptions = {
+              deliveryMode,
+              destinationType,
+              ...advancedSettings,
+            };
             solaceConnection?.publish(publishTo, content, options);
           }}
         >
