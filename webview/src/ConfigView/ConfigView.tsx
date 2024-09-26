@@ -9,8 +9,7 @@ import {
   TableCell,
   Tooltip,
 } from "@nextui-org/react";
-import { Pencil } from "lucide-react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { BrokerConfig } from "../Shared/interfaces";
 import { getVscConfig, setVscConfig } from "../Shared/utils";

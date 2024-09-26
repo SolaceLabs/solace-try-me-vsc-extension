@@ -6,19 +6,31 @@ class SolaceManager {
   isConnected = false;
   onMessage!: (topic: string, content: unknown) => void;
   brokerConfig!: BrokerConfig;
+  onConnectionStateChange!: (
+    isConnected: boolean,
+    error: string | null
+  ) => void;
 
-  async connect(config: BrokerConfig) {
-    this.brokerConfig = config;
+  constructor(config?: BrokerConfig) {
+    if (config) {
+        this.brokerConfig = config;
+    }
+  }
+
+  async connect(config?: BrokerConfig) {
+    if (config) {
+      this.brokerConfig = config;
+    }
     try {
       // Initialize Solace client factory
       solace.SolclientFactory.init();
 
       // Create session
       const properties = new solace.SessionProperties({
-        url: config.url,
-        vpnName: config.vpn,
-        userName: config.username,
-        password: config.password,
+        url: this.brokerConfig.url,
+        vpnName: this.brokerConfig.vpn,
+        userName: this.brokerConfig.username,
+        password: this.brokerConfig.password,
       });
 
       this.session = solace.SolclientFactory.createSession(properties);
@@ -26,7 +38,10 @@ class SolaceManager {
       // Define session event listeners
       this.session.on(solace.SessionEventCode.UP_NOTICE, () => {
         this.isConnected = true;
-        console.log("Solace session connected");
+        console.debug("Solace session connected");
+        if (this.onConnectionStateChange) {
+          this.onConnectionStateChange(this.isConnected, null);
+        }
       });
 
       this.session.on(
@@ -34,12 +49,21 @@ class SolaceManager {
         (sessionEvent) => {
           this.isConnected = false;
           console.error("Solace connection failed:", sessionEvent.message);
+          if (this.onConnectionStateChange) {
+            this.onConnectionStateChange(
+              this.isConnected,
+              sessionEvent.message
+            );
+          }
         }
       );
 
       this.session.on(solace.SessionEventCode.DISCONNECTED, () => {
         this.isConnected = false;
-        console.log("Solace session disconnected");
+        console.debug("Solace session disconnected");
+        if (this.onConnectionStateChange) {
+          this.onConnectionStateChange(this.isConnected, null);
+        }
       });
 
       // Connect the session
