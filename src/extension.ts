@@ -4,31 +4,14 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the webview view provider
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
-      "solaceTryMeVscExtension.config",
-      new SolaceTryMeViewProvider(context, "config-panel")
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      "solaceTryMeVscExtension.subscribe",
-      new SolaceTryMeViewProvider(context, "subscribe-panel")
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      "solaceTryMeVscExtension.publish",
-      new SolaceTryMeViewProvider(context, "publish-panel")
+      "solaceTryMeVscExtension.sideView",
+      new SolaceTryMeViewProvider(context)
     )
   );
 }
 
 class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly viewType: string
-  ) {}
+  constructor(private readonly context: vscode.ExtensionContext) {}
 
   resolveWebviewView(webviewView: vscode.WebviewView) {
     const { webview } = webviewView;
@@ -61,7 +44,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
         <link rel="stylesheet" crossorigin href="${cssUri}">
       </head>
       <body>
-        <div id="${this.viewType}"></div>
+        <div id="root"></div>
       </body>
     </html>
 `;

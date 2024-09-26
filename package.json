@@ -25,18 +25,8 @@
     "views": {
       "solaceTryMeVscExtension": [
         {
-          "id": "solaceTryMeVscExtension.config",
-          "name": "Config",
-          "type": "webview"
-        },
-        {
-          "id": "solaceTryMeVscExtension.publish",
-          "name": "Publish",
-          "type": "webview"
-        },
-        {
-          "id": "solaceTryMeVscExtension.subscribe",
-          "name": "Subscribe",
+          "id": "solaceTryMeVscExtension.sideView",
+          "name": "Solace TryMe",
           "type": "webview"
         }
       ]

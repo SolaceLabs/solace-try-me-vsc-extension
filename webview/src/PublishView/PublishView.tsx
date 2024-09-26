@@ -1,35 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RadioGroup, Radio, Input, Textarea, Button } from "@nextui-org/react";
 
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
+import { DestinationType, MessageDeliveryModeType } from "solclientjs";
+import { PublishOptions } from "../Shared/interfaces";
 
-enum PublishType {
-  TOPIC = "topic",
-  QUEUE = "queue",
-}
-
-enum DeliveryMode {
-  DIRECT = "direct",
-  PERSISTENT = "persistent",
-}
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
     useState<SolaceManager | null>(null);
 
-  const [publishToType, setPublishToType] = useState<PublishType>(
-    PublishType.TOPIC
+  const [destinationType, setDestinationType] = useState<DestinationType>(
+    DestinationType.TOPIC
   );
   const [publishTo, setPublishTo] = useState<string>("");
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(
-    DeliveryMode.DIRECT
+  const [deliveryMode, setDeliveryMode] = useState<MessageDeliveryModeType>(
+    MessageDeliveryModeType.DIRECT
   );
   const [content, setContent] = useState<string>("");
-
-  useEffect(() => {
-    console.log("Current broker:", solaceConnection);
-  }, [solaceConnection]);
 
   const disablePublish = !solaceConnection || !publishTo || !content;
 
@@ -41,32 +30,42 @@ const PublishView = () => {
         <RadioGroup
           label="Select a topic or queue to publish to"
           orientation="horizontal"
-          value={publishToType}
-          onValueChange={(value) => setPublishToType(value as PublishType)}
+          value={destinationType}
+          onValueChange={(value) =>
+            setDestinationType(value as DestinationType)
+          }
         >
-          <Radio className="capitalize" value={PublishType.TOPIC}>
-            {PublishType.TOPIC}
+          <Radio className="capitalize" value={DestinationType.TOPIC}>
+            Topic
           </Radio>
-          <Radio className="capitalize" value={PublishType.QUEUE}>
-            {PublishType.QUEUE}
+          <Radio className="capitalize" value={DestinationType.QUEUE}>
+            Queue
           </Radio>
         </RadioGroup>
         <Input
-          label={`Publish to ${publishToType}`}
+          label={`Publish to ${destinationType}`}
           value={publishTo}
           onValueChange={setPublishTo}
         />
         <RadioGroup
           label="Delivery Mode"
           orientation="horizontal"
-          value={deliveryMode}
-          onValueChange={(value) => setDeliveryMode(value as DeliveryMode)}
+          value={deliveryMode.toString()}
+          onValueChange={(value) =>
+            setDeliveryMode(Number(value) as MessageDeliveryModeType)
+          }
         >
-          <Radio className="capitalize" value={DeliveryMode.DIRECT}>
-            {DeliveryMode.DIRECT}
+          <Radio
+            className="capitalize"
+            value={MessageDeliveryModeType.DIRECT.toString()}
+          >
+            Direct
           </Radio>
-          <Radio className="capitalize" value={DeliveryMode.PERSISTENT}>
-            {DeliveryMode.PERSISTENT}
+          <Radio
+            className="capitalize"
+            value={MessageDeliveryModeType.PERSISTENT.toString()}
+          >
+            Persistent
           </Radio>
         </RadioGroup>
         <Textarea
@@ -78,7 +77,8 @@ const PublishView = () => {
           color="success"
           isDisabled={disablePublish}
           onClick={() => {
-            solaceConnection?.publish(publishTo, content);
+            const options: PublishOptions = { deliveryMode, destinationType };
+            solaceConnection?.publish(publishTo, content, options);
           }}
         >
           Publish

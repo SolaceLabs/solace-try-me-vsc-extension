@@ -1,5 +1,5 @@
-import solace from "solclientjs";
-import { BrokerConfig } from "./interfaces";
+import solace, { SolclientFactory } from "solclientjs";
+import { BrokerConfig, PublishOptions } from "./interfaces";
 
 class SolaceManager {
   session: solace.Session | undefined;
@@ -13,7 +13,7 @@ class SolaceManager {
 
   constructor(config?: BrokerConfig) {
     if (config) {
-        this.brokerConfig = config;
+      this.brokerConfig = config;
     }
   }
 
@@ -23,7 +23,7 @@ class SolaceManager {
     }
     try {
       // Initialize Solace client factory
-      solace.SolclientFactory.init();
+      SolclientFactory.init();
 
       // Create session
       const properties = new solace.SessionProperties({
@@ -33,7 +33,7 @@ class SolaceManager {
         password: this.brokerConfig.password,
       });
 
-      this.session = solace.SolclientFactory.createSession(properties);
+      this.session = SolclientFactory.createSession(properties);
 
       // Define session event listeners
       this.session.on(solace.SessionEventCode.UP_NOTICE, () => {
@@ -102,7 +102,7 @@ class SolaceManager {
         throw new Error("Session not initialized");
       }
       this.session.subscribe(
-        solace.SolclientFactory.createTopicDestination(topic),
+        SolclientFactory.createTopicDestination(topic),
         true,
         topic,
         10000
@@ -113,20 +113,50 @@ class SolaceManager {
     }
   }
 
-  publish(topic: string, content: unknown) {
+  publish(name: string, content: string, options: PublishOptions = {}) {
     try {
       if (!this.session) {
         throw new Error("Session not initialized");
       }
-      const message = solace.SolclientFactory.createMessage();
-      message.setDestination(
-        solace.SolclientFactory.createTopicDestination(topic)
-      );
-      message.setBinaryAttachment(JSON.stringify(content));
+      const message = SolclientFactory.createMessage();
+      if (options.destinationType !== undefined) {
+        if (options.destinationType === solace.DestinationType.QUEUE) {
+          message.setDestination(
+            SolclientFactory.createDurableQueueDestination(name)
+          );
+        } else if (options.destinationType === solace.DestinationType.TOPIC) {
+          message.setDestination(SolclientFactory.createTopicDestination(name));
+        }
+      } else {
+        message.setDestination(SolclientFactory.createTopicDestination(name));
+      }
+      if (options.deliveryMode !== undefined) {
+        message.setDeliveryMode(options.deliveryMode);
+      }
+      if (options.dmqEligible !== undefined) {
+        message.setDMQEligible(options.dmqEligible);
+      }
+      if (options.replyToTopic !== undefined) {
+        message.setReplyTo(
+          SolclientFactory.createTopicDestination(options.replyToTopic)
+        );
+      }
+      if (options.priority !== undefined) {
+        message.setPriority(options.priority);
+      }
+      if (options.timeToLive !== undefined) {
+        message.setTimeToLive(options.timeToLive * 1e3);
+      }
+      if (options.correlationId !== undefined) {
+        message.setCorrelationId(options.correlationId);
+      }
+      message.setBinaryAttachment(content);
       this.session.send(message);
-      console.log("Published message:", topic, content);
+      console.debug("Published message:", name, content);
+      return null
     } catch (publishError) {
-      console.error("Error publishing message:", topic, content, publishError);
+      console.error("Error publishing message:", name, content, publishError);
+      return publishError;
     }
   }
 

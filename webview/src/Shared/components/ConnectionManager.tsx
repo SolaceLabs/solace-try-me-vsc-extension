@@ -63,6 +63,12 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
     }
   }, [connectionState, onSetConnection, solaceConnection]);
 
+  useEffect(() => {
+    return () => {
+      solaceConnection?.disconnect();
+    };
+  }, [solaceConnection]);
+
   const onToggleConnection = () => {
     if (connectionState === ConnectionState.CONNECTED) {
       solaceConnection?.disconnect();
@@ -88,7 +94,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
   };
   switch (connectionState) {
     case ConnectionState.CONNECTED:
-      buttonProps.variant="bordered";
+      buttonProps.variant = "bordered";
       buttonProps.startContent = <Link2 size={24} />;
       buttonProps.children = "Disconnect";
       break;
