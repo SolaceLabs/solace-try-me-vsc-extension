@@ -46,3 +46,24 @@ export function compareBrokerConfigs(a: BrokerConfig, b: BrokerConfig) {
     a.password === b.password
   );
 }
+
+export const deepCompareObjects = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (typeof a !== "object" || typeof b !== "object") return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (
+      !keysB.includes(key) ||
+      !deepCompareObjects(
+        (a as { [x: string]: unknown })[key],
+        (b as { [x: string]: unknown })[key]
+      )
+    ) {
+      return false;
+    }
+  }
+  return true;
+};

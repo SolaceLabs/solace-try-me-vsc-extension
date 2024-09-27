@@ -45,7 +45,7 @@ const ConfigModal = ({
   return (
     <Modal
       isOpen={show}
-      placement="top"
+      placement="center"
       onOpenChange={(open) => {
         if (!open) {
           onClose(null);

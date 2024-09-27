@@ -37,8 +37,7 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
     },
   ],
   recentlyUsed: {
-    brokers: [],
-    subscribeTopics: [],
-    publishTopics: [],
+    subscribeConfig: [],
+    publishConfig: [],
   },
 };

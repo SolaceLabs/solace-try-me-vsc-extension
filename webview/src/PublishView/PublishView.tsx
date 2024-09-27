@@ -14,7 +14,8 @@ import {
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
 import { DestinationType, MessageDeliveryModeType } from "solclientjs";
-import { PublishOptions } from "../Shared/interfaces";
+import { PublishConfigs, PublishOptions } from "../Shared/interfaces";
+import ConfigStore from "../Shared/components/ConfigStore";
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -32,11 +33,46 @@ const PublishView = () => {
     Partial<PublishOptions>
   >({});
 
+  const [openAdvancedSettings, setOpenAdvancedSettings] = useState(false);
+
   const disablePublish = !solaceConnection || !publishTo || !content;
+
+  const configs: PublishConfigs = {
+    publishTo,
+    content,
+    deliveryMode,
+    destinationType,
+    ...advancedSettings,
+  };
+
+  const onLoadConfig = (config: PublishConfigs) => {
+    const {
+      publishTo,
+      content,
+      deliveryMode,
+      destinationType,
+      ...advancedSettings
+    } = config;
+    setPublishTo(publishTo);
+    setContent(content);
+    if (deliveryMode !== undefined) setDeliveryMode(deliveryMode);
+    if (destinationType !== undefined) setDestinationType(destinationType);
+    if (Object.keys(advancedSettings).length) {
+      setAdvancedSettings(advancedSettings);
+      setOpenAdvancedSettings(true);
+    } else {
+      setAdvancedSettings({});
+      setOpenAdvancedSettings(false);
+    }
+  };
 
   return (
     <div>
-      <h2 className="mb-2">Publish</h2>
+      <ConfigStore
+        storeKey="publishConfig"
+        currentConfig={configs}
+        onLoadConfig={onLoadConfig}
+      />
       <div className="flex flex-col gap-4">
         <ConnectionManager onSetConnection={setSolaceConnection} />
         <RadioGroup
@@ -87,14 +123,18 @@ const PublishView = () => {
         />
         <Accordion
           isCompact
+          selectedKeys={openAdvancedSettings ? ["advanced-settings"] : []}
           onSelectionChange={(selectedKeys) => {
             if (Array.from(selectedKeys).length) {
+              setOpenAdvancedSettings(true);
               setAdvancedSettings({
-                dmqEligible: false,
-                priority: 0,
+                ...advancedSettings,
+                dmqEligible: advancedSettings.dmqEligible ?? false,
+                priority: advancedSettings.priority ?? 0,
               });
             } else {
               setAdvancedSettings({});
+              setOpenAdvancedSettings(false);
             }
           }}
         >

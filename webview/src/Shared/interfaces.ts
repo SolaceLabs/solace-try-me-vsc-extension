@@ -12,9 +12,8 @@ export interface BrokerConfig {
 export interface VscConfigInterface {
   brokerConfigs: BrokerConfig[];
   recentlyUsed: {
-    brokers: string[];
-    subscribeTopics: string[];
-    publishTopics: string[];
+    subscribeConfig: {name: string, config: unknown}[];
+    publishConfig: {name: string, config: PublishConfigs}[];
   };
 }
 
@@ -32,3 +31,10 @@ export interface PublishOptions {
   replyToTopic?: string;
   correlationId?: string;
 }
+
+export interface PublishConfigs extends PublishOptions {
+  publishTo: string;
+  content: string;
+}
+
+export type Configs = PublishConfigs
