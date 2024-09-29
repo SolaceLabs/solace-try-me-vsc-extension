@@ -38,6 +38,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "build:view": "cd webview && npm i && npm run build", 
+    "build": "npm run build:view && npm run compile",
     "lint": "eslint src",
     "test": "vscode-test"
   },
