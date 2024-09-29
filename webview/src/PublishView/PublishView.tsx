@@ -14,8 +14,14 @@ import {
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
 import { DestinationType, MessageDeliveryModeType } from "solclientjs";
-import { PublishConfigs, PublishOptions } from "../Shared/interfaces";
+import {
+  Configs,
+  PublishConfigs,
+  PublishOptions,
+  PublishStats,
+} from "../Shared/interfaces";
 import ConfigStore from "../Shared/components/ConfigStore";
+import { Delete, Trash2 } from "lucide-react";
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -33,7 +39,14 @@ const PublishView = () => {
     Partial<PublishOptions>
   >({});
 
+  const [stats, setStats] = useState<PublishStats>({
+    direct: 0,
+    persistent: 0,
+  });
+
   const [openAdvancedSettings, setOpenAdvancedSettings] = useState(false);
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const disablePublish = !solaceConnection || !publishTo || !content;
 
@@ -45,14 +58,14 @@ const PublishView = () => {
     ...advancedSettings,
   };
 
-  const onLoadConfig = (config: PublishConfigs) => {
+  const onLoadConfig = (config: Configs) => {
     const {
       publishTo,
       content,
       deliveryMode,
       destinationType,
       ...advancedSettings
-    } = config;
+    } = config as PublishConfigs;
     setPublishTo(publishTo);
     setContent(content);
     if (deliveryMode !== undefined) setDeliveryMode(deliveryMode);
@@ -67,7 +80,7 @@ const PublishView = () => {
   };
 
   return (
-    <div>
+    <div className="pb-3">
       <ConfigStore
         storeKey="publishConfig"
         currentConfig={configs}
@@ -208,12 +221,68 @@ const PublishView = () => {
               destinationType,
               ...advancedSettings,
             };
-            solaceConnection?.publish(publishTo, content, options);
+            const error = solaceConnection?.publish(
+              publishTo,
+              content,
+              options
+            );
+
+            if (!error) {
+              setStats((prev) => {
+                const newStats = { ...prev };
+                if (deliveryMode === MessageDeliveryModeType.DIRECT) {
+                  newStats.direct++;
+                } else {
+                  newStats.persistent++;
+                }
+                return newStats;
+              });
+            }
+            setErrorMessage(error?.message ?? null);
           }}
         >
           Publish
         </Button>
       </div>
+      <div className="flex justify-between items-end gap-4 mt-4">
+        <div>
+          <small>Messages Published</small>
+          <br></br>
+          <small className="pr-4">Direct: {stats.direct}</small>
+          <small>Persistent: {stats.persistent}</small>
+        </div>
+        <div className="flex justify-between flex-co items-end gap-1 mt-3">
+          <Button
+            size="sm"
+            variant="bordered"
+            startContent={<Trash2 size={12} />}
+            onClick={() => {
+              setStats({ direct: 0, persistent: 0 });
+            }}
+          >
+            Clear Stats
+          </Button>
+          <Button
+            size="sm"
+            variant="bordered"
+            startContent={<Delete size={12} />}
+            onClick={() => {
+              setPublishTo("");
+              setContent("");
+              setDeliveryMode(MessageDeliveryModeType.DIRECT);
+              setDestinationType(DestinationType.TOPIC);
+              setAdvancedSettings({});
+              setOpenAdvancedSettings(false);
+              setErrorMessage(null);
+            }}
+          >
+            Clear Fields
+          </Button>
+        </div>
+      </div>
+      {errorMessage && (
+        <div className="text-red-500 text-sm mt-2">{errorMessage}</div>
+      )}
     </div>
   );
 };

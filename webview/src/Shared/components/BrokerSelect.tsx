@@ -33,7 +33,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
     <Select
       label="Solace Broker Config"
       placeholder="Select a broker"
-      className="max-w-xs"
+      className="w-auto flex-grow min-w-40"
       onClick={(open) => open && fetchBrokers()}
       disabledKeys={["no-item-available"]}
       onSelectionChange={(selection) => {

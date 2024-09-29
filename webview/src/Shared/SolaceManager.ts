@@ -113,7 +113,11 @@ class SolaceManager {
     }
   }
 
-  publish(name: string, content: string, options: PublishOptions = {}) {
+  publish(
+    name: string,
+    content: string,
+    options: PublishOptions = {}
+  ): Error | void {
     try {
       if (!this.session) {
         throw new Error("Session not initialized");
@@ -153,10 +157,10 @@ class SolaceManager {
       message.setBinaryAttachment(content);
       this.session.send(message);
       console.debug("Published message:", name, content, options);
-      return null
-    } catch (publishError) {
+      return;
+    } catch (publishError: unknown) {
       console.error("Error publishing message:", name, content, publishError);
-      return publishError;
+      return publishError as Error;
     }
   }
 

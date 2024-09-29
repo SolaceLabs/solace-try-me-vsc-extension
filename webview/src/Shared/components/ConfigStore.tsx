@@ -16,21 +16,21 @@ import { Save, RefreshCcw, Trash2 } from "lucide-react";
 import { deepCompareObjects, getVscConfig, setVscConfig } from "../utils";
 import { Configs } from "../interfaces";
 
-interface ConfigStoreProps<Config extends Configs> {
-  currentConfig: Config;
-  onLoadConfig: (config: Config) => void;
+interface ConfigStoreProps {
+  currentConfig: Configs;
+  onLoadConfig: (config: Configs) => void;
   storeKey: "publishConfig" | "subscribeConfig";
 }
 
-const ConfigStore = <Config extends Configs>({
+const ConfigStore = ({
   currentConfig,
   onLoadConfig,
   storeKey,
-}: ConfigStoreProps<Config>) => {
-  const [lastSavedConfig, setLastSavedConfig] = useState<Config>();
+}: ConfigStoreProps) => {
+  const [lastSavedConfig, setLastSavedConfig] = useState<Configs>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [existingConfigs, setExistingConfigs] = useState<
-    { name: string; config: Config }[]
+    { name: string; config: Configs }[]
   >([]);
   const [selectedConfigName, setSelectedConfigName] = useState<string>();
 
@@ -50,7 +50,7 @@ const ConfigStore = <Config extends Configs>({
     const state = getVscConfig();
     if (state && state.recentlyUsed && state.recentlyUsed[storeKey]) {
       setExistingConfigs(
-        state.recentlyUsed[storeKey] as { name: string; config: Config }[]
+        state.recentlyUsed[storeKey] as { name: string; config: Configs }[]
       );
     }
   }, [storeKey]);
@@ -63,7 +63,10 @@ const ConfigStore = <Config extends Configs>({
     if (existingConfigs && existingConfigs.length) {
       setVscConfig((state) => {
         const newState = { ...state };
-        newState.recentlyUsed[storeKey] = existingConfigs;
+        (newState.recentlyUsed[storeKey] as {
+          name: string;
+          config: Configs;
+        }[]) = existingConfigs;
         return newState;
       });
     }

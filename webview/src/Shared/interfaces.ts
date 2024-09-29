@@ -15,7 +15,7 @@ export interface VscConfigInterface {
   brokerConfigs: BrokerConfig[];
   recentlyUsed: {
     views: Views[];
-    subscribeConfig: {name: string, config: unknown}[];
+    subscribeConfig: {name: string, config: SubscribeConfigs}[];
     publishConfig: {name: string, config: PublishConfigs}[];
   };
 }
@@ -40,4 +40,13 @@ export interface PublishConfigs extends PublishOptions {
   content: string;
 }
 
-export type Configs = PublishConfigs
+export interface SubscribeConfigs {
+
+}
+
+export interface PublishStats {
+  direct: number;
+  persistent: number;
+}
+
+export type Configs = PublishConfigs | SubscribeConfigs;
