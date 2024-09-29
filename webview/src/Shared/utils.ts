@@ -19,6 +19,9 @@ export const initializeVscConfig = () => {
         setState: (state: VscConfigInterface) => {
           localStorage.setItem(lsKey, JSON.stringify(state));
         },
+        postMessage: (message: { [key: string]: unknown }) => {
+          console.log("Message from webview", message);
+        },
       };
       return vscSimulator;
     })();
@@ -26,6 +29,14 @@ export const initializeVscConfig = () => {
 };
 
 export const vscode = initializeVscConfig();
+
+export function openFileInNewTab(file: string, language = "json") {
+  vscode.postMessage({
+    command: "openInNewTab",
+    content: file,
+    language: language,
+  });
+}
 
 export function getVscConfig() {
   return vscode.getState() || VSC_CONFIG_DEFAULT;

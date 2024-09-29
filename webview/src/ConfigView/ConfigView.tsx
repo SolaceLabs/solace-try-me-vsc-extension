@@ -79,7 +79,7 @@ const ConfigView = () => {
           base: "max-h-[300px] overflow-y-auto",
         }}
         isHeaderSticky
-        isCompact	
+        isCompact
       >
         <TableHeader>
           <TableColumn>Title</TableColumn>

@@ -15,14 +15,15 @@ export interface VscConfigInterface {
   brokerConfigs: BrokerConfig[];
   recentlyUsed: {
     views: Views[];
-    subscribeConfig: {name: string, config: SubscribeConfigs}[];
-    publishConfig: {name: string, config: PublishConfigs}[];
+    subscribeConfig: { name: string; config: SubscribeConfigs }[];
+    publishConfig: { name: string; config: PublishConfigs }[];
   };
 }
 
 export interface VsCodeApi {
   getState(): VscConfigInterface;
   setState(state: VscConfigInterface): void;
+  postMessage(message: { [key: string]: unknown }): void;
 }
 
 export interface PublishOptions {

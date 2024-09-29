@@ -16,6 +16,16 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
   resolveWebviewView(webviewView: vscode.WebviewView) {
     const { webview } = webviewView;
 
+    webview.onDidReceiveMessage(async (message) => {
+      if (message.command === "openInNewTab") {
+        const document = await vscode.workspace.openTextDocument({
+          content: message.content,
+          language: message.language ?? "plaintext",
+        });
+        vscode.window.showTextDocument(document, { preview: true });
+      }
+    });
+
     // Allow scripts in the webview
     webview.options = {
       enableScripts: true,

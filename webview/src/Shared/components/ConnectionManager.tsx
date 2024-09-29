@@ -116,9 +116,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
         <BrokerSelect onBrokerSelect={setCurrentBroker} />
         <Button {...buttonProps} />
       </div>
-      {connectionError && (
-        <ErrorMessage>{connectionError}</ErrorMessage>
-      )}
+      {connectionError && <ErrorMessage>{connectionError}</ErrorMessage>}
     </div>
   );
 };
