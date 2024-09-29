@@ -7,7 +7,8 @@ Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to
 - Monitor all messages in your event broker directly from within Visual Studio Code.
 - Publish messages to your event broker directly from within Visual Studio Code.
 - Create and save multiple broker configurations.
-- Save preset configuration for publish and subscribe.
+- Save preset configuration for publish and subscribe for quick reload.
+- Supports light and dark themes.
 
 ## Requirements
 

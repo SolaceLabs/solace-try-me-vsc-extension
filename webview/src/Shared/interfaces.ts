@@ -45,7 +45,7 @@ export interface SubscribeConfigs {
   topics: string[];
   queueType?: solace.QueueType;
   queueName?: string;
-  bindTopic?: string;
+  queueTopic?: string;
 }
 
 export interface PublishStats {

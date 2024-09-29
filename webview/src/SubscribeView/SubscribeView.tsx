@@ -36,7 +36,7 @@ const SubscribeView = () => {
   const [topics, setTopics] = useState<string[]>([]);
   const [queueType, setQueueType] = useState<solace.QueueType>();
   const [queueName, setQueueName] = useState<string>();
-  const [bindTopic, setBindTopic] = useState<string>();
+  const [queueTopic, setQueueTopic] = useState<string>();
 
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -95,9 +95,13 @@ const SubscribeView = () => {
   };
 
   const startQueueConsumer = () => {
+    if (!solaceConnection || !queueName || !queueType) {
+      return;
+    }
     const consumer = solaceConnection?.consumeQueue(
-      queueName!,
-      queueType!,
+      queueName,
+      queueType,
+      queueTopic,
       (error) => {
         setQueueError(error.message);
         setQueueConsumer(null);
@@ -112,7 +116,7 @@ const SubscribeView = () => {
     topics,
     queueType,
     queueName,
-    bindTopic,
+    queueTopic,
   };
 
   const onLoadConfig = (config: Configs) => {
@@ -120,7 +124,7 @@ const SubscribeView = () => {
       topics: newTopics,
       queueType,
       queueName,
-      bindTopic,
+      queueTopic,
     } = config as SubscribeConfigs;
 
     topics.forEach((topic) => {
@@ -132,7 +136,7 @@ const SubscribeView = () => {
 
     setQueueType(queueType);
     setQueueName(queueName);
-    setBindTopic(bindTopic);
+    setQueueTopic(queueTopic);
     if (queueType) {
       setOpenBindSettings(true);
     } else {
@@ -198,7 +202,7 @@ const SubscribeView = () => {
             } else {
               setQueueType(undefined);
               setQueueName(undefined);
-              setBindTopic(undefined);
+              setQueueTopic(undefined);
               setOpenBindSettings(false);
             }
           }}
@@ -242,9 +246,9 @@ const SubscribeView = () => {
               {queueType === solace.QueueType.TOPIC_ENDPOINT && (
                 <Input
                   label="Topic"
-                  value={bindTopic || ""}
+                  value={queueTopic || ""}
                   isRequired
-                  onValueChange={setBindTopic}
+                  onValueChange={setQueueTopic}
                   isDisabled={!solaceConnection}
                 />
               )}
@@ -263,7 +267,7 @@ const SubscribeView = () => {
                 isDisabled={
                   !solaceConnection ||
                   !queueName ||
-                  (queueType === solace.QueueType.TOPIC_ENDPOINT && !bindTopic)
+                  (queueType === solace.QueueType.TOPIC_ENDPOINT && !queueTopic)
                 }
               >
                 {queueConsumer ? "Stop Consume" : "Start Consume"}

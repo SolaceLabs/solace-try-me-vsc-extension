@@ -39,8 +39,8 @@ const ConfigModal = ({
   }, [initialConfig]);
 
   useEffect(() => {
-    setDisableSave(!title || !url || !vpn || !username || !password);
-  }, [title, url, vpn, username, password]);
+    setDisableSave(!title || !url || !vpn || !username);
+  }, [title, url, vpn, username]);
 
   return (
     <Modal
@@ -106,7 +106,6 @@ const ConfigModal = ({
                 label="Password"
                 value={password}
                 onValueChange={setPassword}
-                isRequired
               />
             </ModalBody>
             <ModalFooter>
@@ -126,6 +125,11 @@ const ConfigModal = ({
                     password,
                   };
                   onClose(newConfig);
+                  setTitle("");
+                  setUrl("");
+                  setVpn("");
+                  setUsername("");
+                  setPassword("");
                 }}
               >
                 {initialConfig?.id ? "Save" : "Create"}

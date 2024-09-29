@@ -44,7 +44,13 @@ class SolaceManager {
       });
     }
     const uid = Math.random().toString(36).substring(7) + Date.now();
-    const messageObj = { topic, payload, userProperties, metadata, _extension_uid: uid };
+    const messageObj = {
+      topic,
+      payload,
+      userProperties,
+      metadata,
+      _extension_uid: uid,
+    };
     console.debug("Received message:", messageObj);
     this.onMessage(messageObj);
   }
@@ -152,6 +158,7 @@ class SolaceManager {
   consumeQueue(
     name: string,
     type: solace.QueueType,
+    topic: string | undefined,
     onError: (error: Error) => void
   ) {
     try {
@@ -164,6 +171,11 @@ class SolaceManager {
         name,
         type,
       });
+
+      if (type === solace.QueueType.TOPIC_ENDPOINT && topic) {
+        consumerProperties.topicEndpointSubscription =
+          SolclientFactory.createTopicDestination(topic);
+      }
 
       const messageConsumer =
         this.session.createMessageConsumer(consumerProperties);
