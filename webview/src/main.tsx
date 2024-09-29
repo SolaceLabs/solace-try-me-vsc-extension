@@ -19,15 +19,34 @@ const Main = () => {
     }
   }, []);
 
+
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === "setTheme") {        
+        const theme = message.theme;
+        if (document.body.parentElement) {
+          document.body.parentElement.className = theme;
+        }
+      }
+    };
+    window.addEventListener("message", listener);
+    return () => {
+      window.removeEventListener("message", listener);
+    };
+  }, []);
+
   return (
-    <main className="dark text-foreground bg-background w-full h-full p-2">
+    <main className="text-foreground bg-background w-full h-full p-2">
       <Accordion
         selectionMode="multiple"
         defaultExpandedKeys={["config"]}
         keepContentMounted
         selectedKeys={tabs}
         onSelectionChange={(selectedKeys) => {
-          const newTabs = Array.from(selectedKeys) as VscConfigInterface["recentlyUsed"]["views"];
+          const newTabs = Array.from(
+            selectedKeys
+          ) as VscConfigInterface["recentlyUsed"]["views"];
           setTabs(newTabs);
           setVscConfig((state) => {
             const newState = { ...state };

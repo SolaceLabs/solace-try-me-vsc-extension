@@ -53,9 +53,18 @@ const transformMetaItem = ([key, value]: [string, unknown]) => {
 };
 
 const getPayload = (payload: string) => {
-  return payload.length > MAC_PAYLOAD_LENGTH
-    ? `${payload.slice(0, MAC_PAYLOAD_LENGTH)}...`
-    : payload;
+  return payload.length > MAC_PAYLOAD_LENGTH ? (
+    <>
+      {payload.slice(0, MAC_PAYLOAD_LENGTH)}
+      <Tooltip
+        content={`Payload truncated to ${MAC_PAYLOAD_LENGTH} character. Open message in VSC to view full payload`}
+      >
+        <span className="text-default">...</span>
+      </Tooltip>
+    </>
+  ) : (
+    payload
+  );
 };
 
 const SolaceMessage = ({ message }: SolaceMessageProps) => {

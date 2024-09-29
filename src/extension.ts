@@ -38,6 +38,14 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
 
     // Set the HTML content for the webview
     webview.html = this.getHtmlForWebview(webview);
+
+    // Send the current theme to the webview
+    this.updateTheme(webview);
+
+    // Listen for theme changes and update the webview accordingly
+    vscode.window.onDidChangeActiveColorTheme((event) => {
+      this.updateTheme(webview);
+    });
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {
@@ -48,9 +56,11 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
     const jsUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.js");
     const cssUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.css");
 
+    const theme = this.getTheme();
+
     return `
     <!DOCTYPE html>
-    <html lang="en" class="dark">
+    <html lang="en" class="${theme}">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -62,7 +72,21 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
         <div id="root"></div>
       </body>
     </html>
-`;
+    `;
+  }
+
+  private getTheme() {
+    // Using dark for high contrast and dark themes
+    return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light
+      ? "light"
+      : "dark";
+  }
+
+  // Method to send the current theme to the webview
+  private updateTheme(webview: vscode.Webview) {
+    const theme = this.getTheme();
+    // Send a message to the webview to update the theme
+    webview.postMessage({ command: "setTheme", theme });
   }
 }
 
