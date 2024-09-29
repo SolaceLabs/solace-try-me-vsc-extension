@@ -79,10 +79,10 @@ const ConfigView = () => {
           base: "max-h-[300px] overflow-y-auto",
         }}
         isHeaderSticky
+        isCompact	
       >
         <TableHeader>
           <TableColumn>Title</TableColumn>
-          <TableColumn>URL</TableColumn>
           <TableColumn>VPN</TableColumn>
           <TableColumn>User</TableColumn>
           <TableColumn>Actions</TableColumn>
@@ -91,7 +91,6 @@ const ConfigView = () => {
           {brokerConfigs.map((broker) => (
             <TableRow key={broker.id}>
               <TableCell>{broker.title}</TableCell>
-              <TableCell>{broker.url}</TableCell>
               <TableCell>{broker.vpn}</TableCell>
               <TableCell>{broker.username}</TableCell>
               <TableCell className="flex gap-2">

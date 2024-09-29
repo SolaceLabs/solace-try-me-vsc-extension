@@ -14,12 +14,12 @@ import {
 import { Save, RefreshCcw, Trash2 } from "lucide-react";
 
 import { deepCompareObjects, getVscConfig, setVscConfig } from "../utils";
-import { Configs, VscConfigInterface } from "../interfaces";
+import { Configs } from "../interfaces";
 
 interface ConfigStoreProps<Config extends Configs> {
   currentConfig: Config;
   onLoadConfig: (config: Config) => void;
-  storeKey: keyof VscConfigInterface["recentlyUsed"];
+  storeKey: "publishConfig" | "subscribeConfig";
 }
 
 const ConfigStore = <Config extends Configs>({
@@ -120,6 +120,7 @@ const ConfigStore = <Config extends Configs>({
               ? [selectedConfigName]
               : []
           }
+          disabledKeys={["no-item-available"]}
           onSelectionChange={(keys) => {
             const name = Array.from(keys)[0] as string;
             if (!existingConfigs.map((config) => config.name).includes(name)) {
@@ -137,28 +138,34 @@ const ConfigStore = <Config extends Configs>({
             }
           }}
         >
-          {existingConfigs.map((config) => (
-            <SelectItem
-              key={config.name}
-              endContent={
-                <Button
-                  variant="flat"
-                  color="danger"
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.debug("Deleting config:", config.name);
-                    deleteConfig(config.name);
-                  }}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              }
-            >
-              {config.name}
+          {existingConfigs.length ? (
+            existingConfigs.map((config) => (
+              <SelectItem
+                key={config.name}
+                endContent={
+                  <Button
+                    variant="flat"
+                    color="danger"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.debug("Deleting config:", config.name);
+                      deleteConfig(config.name);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                }
+              >
+                {config.name}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem key="no-item-available">
+              No saved configurations
             </SelectItem>
-          ))}
+          )}
         </Select>
         <div className="flex items-center gap-2">
           <Tooltip content="Save configuration as new entry">

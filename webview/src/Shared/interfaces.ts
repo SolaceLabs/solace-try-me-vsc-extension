@@ -9,9 +9,12 @@ export interface BrokerConfig {
   password: string;
 }
 
+export type Views = "config" | "subscribe" | "publish";
+
 export interface VscConfigInterface {
   brokerConfigs: BrokerConfig[];
   recentlyUsed: {
+    views: Views[];
     subscribeConfig: {name: string, config: unknown}[];
     publishConfig: {name: string, config: PublishConfigs}[];
   };

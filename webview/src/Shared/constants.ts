@@ -37,6 +37,7 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
     },
   ],
   recentlyUsed: {
+    views: ["config"],
     subscribeConfig: [],
     publishConfig: [],
   },

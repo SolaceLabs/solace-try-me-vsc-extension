@@ -13,7 +13,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
 
   const fetchBrokers = () => {
     // Fetch brokers from vscode
-    const state = getVscConfig();    
+    const state = getVscConfig();
     if (state && state.brokerConfigs) {
       setBrokers(state.brokerConfigs);
     }
@@ -30,23 +30,29 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
   }, [currentBroker, onBrokerSelect]);
 
   return (
-      <Select
-        items={brokers}
-        label="Solace Broker Config"
-        placeholder="Select a broker"
-        className="max-w-xs"
-        onClick={(open) => open && fetchBrokers()}
-        onSelectionChange={(selection) => {
-          const values = Array.from(selection);
-          if (values.length > 0) {
-            const key = values[0];
-            const broker = brokers.find((b) => b.id === key);
-            if (broker) setCurrentBroker(broker);
-          }
-        }}
-      >
-        {(broker) => <SelectItem key={broker.id}>{broker.title}</SelectItem>}
-      </Select>
+    <Select
+      label="Solace Broker Config"
+      placeholder="Select a broker"
+      className="max-w-xs"
+      onClick={(open) => open && fetchBrokers()}
+      disabledKeys={["no-item-available"]}
+      onSelectionChange={(selection) => {
+        const values = Array.from(selection);
+        if (values.length > 0) {
+          const key = values[0];
+          const broker = brokers.find((b) => b.id === key);
+          if (broker) setCurrentBroker(broker);
+        }
+      }}
+    >
+      {brokers.length ? (
+        brokers.map((broker) => (
+          <SelectItem key={broker.id}>{broker.title}</SelectItem>
+        ))
+      ) : (
+        <SelectItem key="no-item-available">No brokers available</SelectItem>
+      )}
+    </Select>
   );
 };
 

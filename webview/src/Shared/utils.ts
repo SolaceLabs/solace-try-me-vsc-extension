@@ -10,11 +10,14 @@ export const initializeVscConfig = () => {
     return (function () {
       // For browser testing
       console.info("Using mock vscode API");
-      const data = { state: VSC_CONFIG_DEFAULT };
+      const lsKey = "vscConfig";
       const vscSimulator: VsCodeApi = {
-        getState: () => data.state,
+        getState: () =>
+          localStorage.getItem(lsKey)
+            ? JSON.parse(localStorage.getItem(lsKey) as string)
+            : VSC_CONFIG_DEFAULT,
         setState: (state: VscConfigInterface) => {
-          data.state = state;
+          localStorage.setItem(lsKey, JSON.stringify(state));
         },
       };
       return vscSimulator;
