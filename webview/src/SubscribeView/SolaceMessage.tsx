@@ -58,9 +58,7 @@ const getPayload = (payload: string) => {
 
 const SolaceMessage = ({ message }: SolaceMessageProps) => {
   const dataStr = formatDate(
-    message.metadata.senderTimestamp ??
-      message.metadata.receiverTimestamp ??
-      Date.now()
+    message.metadata.senderTimestamp ?? message.metadata.receiverTimestamp
   );
 
   const metadata = Object.entries(message.metadata)

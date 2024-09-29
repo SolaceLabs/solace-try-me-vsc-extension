@@ -41,15 +41,11 @@ export interface PublishConfigs extends PublishOptions {
   content: string;
 }
 
-export enum BindTypes {
-  QUEUE = "queue",
-  TOPIC_ENDPOINT = "topic-endpoint",
-}
 
 export interface SubscribeConfigs {
   topics: string[];
-  bindType?: BindTypes;
-  bindValue?: string;
+  queueType?: solace.QueueType;
+  queueName?: string;
   bindTopic?: string;
 }
 
@@ -76,7 +72,7 @@ export interface Message {
     correlationId: string | null;
     ttl: number | null;
     senderTimestamp: number | null;
-    receiverTimestamp: number | null;
+    receiverTimestamp: number;
     priority: number | null;
     isDMQEligible: boolean;
   }

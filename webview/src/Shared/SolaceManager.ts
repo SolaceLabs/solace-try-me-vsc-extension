@@ -19,6 +19,35 @@ class SolaceManager {
     }
   }
 
+  handleMessage(message: solace.Message) {
+    const destination = message.getDestination();
+    const topic = destination ? destination.getName() : "unknown";
+    const payload = message.getBinaryAttachment()?.toString() ?? "";
+    const metadata: Message["metadata"] = {
+      deliveryMode: message.getDeliveryMode(),
+      isDMQEligible: message.isDMQEligible(),
+      ttl: message.getTimeToLive(),
+      priority: message.getPriority(),
+      replyTo: message.getReplyTo()?.getName() || null,
+      senderId: message.getSenderId(),
+      correlationId: message.getCorrelationId(),
+      redelivered: message.isRedelivered(),
+      senderTimestamp: message.getSenderTimestamp(),
+      receiverTimestamp: message.getReceiverTimestamp() ?? Date.now(),
+    };
+
+    const userProperties: { [key: string]: unknown } = {};
+    const userPropertyMap = message.getUserPropertyMap();
+    if (userPropertyMap) {
+      userPropertyMap.getKeys().forEach((key) => {
+        userProperties[key] = userPropertyMap.getField(key);
+      });
+    }
+    const messageObj = { topic, payload, userProperties, metadata };
+    console.debug("Received message:", messageObj);
+    this.onMessage(messageObj);
+  }
+
   async connect(config?: BrokerConfig) {
     if (config) {
       this.brokerConfig = config;
@@ -75,34 +104,10 @@ class SolaceManager {
       throw error;
     }
 
-    this.session.on(solace.SessionEventCode.MESSAGE, (message) => {
-      const destination = message.getDestination();
-      const topic = destination ? destination.getName() : "unknown";
-      const payload = message.getBinaryAttachment()?.toString() ?? "";
-      const metadata: Message["metadata"] = {
-        deliveryMode: message.getDeliveryMode(),
-        isDMQEligible: message.isDMQEligible(),
-        ttl: message.getTimeToLive(),
-        priority: message.getPriority(),
-        replyTo: message.getReplyTo()?.getName() || null,
-        senderId: message.getSenderId(),
-        correlationId: message.getCorrelationId(),
-        redelivered: message.isRedelivered(),
-        senderTimestamp: message.getSenderTimestamp(),
-        receiverTimestamp: message.getReceiverTimestamp(),
-      };
-
-      const userProperties: { [key: string]: unknown } = {};
-      const userPropertyMap = message.getUserPropertyMap();
-      if (userPropertyMap) {
-        userPropertyMap.getKeys().forEach((key) => {
-          userProperties[key] = userPropertyMap.getField(key);
-        });
-      }
-      const messageObj = { topic, payload, userProperties, metadata };
-      console.debug("Received message:", messageObj);
-      this.onMessage(messageObj);
-    });
+    this.session.on(
+      solace.SessionEventCode.MESSAGE,
+      this.handleMessage.bind(this)
+    );
   }
 
   setOnMessage(onMessage: onMessageCallback) {
@@ -140,6 +145,48 @@ class SolaceManager {
       console.log("Unsubscribed from topic:", topic);
     } catch (unsubscribeError) {
       console.error("Error unsubscribing from topic:", topic, unsubscribeError);
+    }
+  }
+
+  consumeQueue(
+    name: string,
+    type: solace.QueueType,
+    onError: (error: Error) => void
+  ) {
+    try {
+      if (!this.session) {
+        throw new Error("Session not initialized");
+      }
+
+      const consumerProperties = new solace.MessageConsumerProperties();
+      consumerProperties.queueDescriptor = new solace.QueueDescriptor({
+        name,
+        type,
+      });
+
+      const messageConsumer =
+        this.session.createMessageConsumer(consumerProperties);
+
+      messageConsumer.on(
+        solace.MessageConsumerEventName.MESSAGE,
+        this.handleMessage.bind(this)
+      );
+
+      messageConsumer.on(
+        solace.MessageConsumerEventName.CONNECT_FAILED_ERROR,
+        (error) => {
+          onError(error);
+          console.log("Consumer connect failed:", error);
+          messageConsumer.disconnect();
+        }
+      );
+
+      // Set up other event listeners as needed
+      messageConsumer.connect();
+
+      return messageConsumer;
+    } catch (consumeError) {
+      console.error("Error consuming queue:", name, consumeError);
     }
   }
 
@@ -197,6 +244,7 @@ class SolaceManager {
   disconnect() {
     if (this.session) {
       console.log("Disconnecting Solace session.");
+      this.session.removeAllListeners();
       this.session.disconnect();
       this.isConnected = false;
       this.session = undefined;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import solace from "solclientjs";
 import {
   Accordion,
   AccordionItem,
@@ -10,9 +11,9 @@ import {
   Divider,
   ScrollShadow,
 } from "@nextui-org/react";
+import { SquareX, Trash2 } from "lucide-react";
 
 import {
-  BindTypes,
   Configs,
   Message,
   SubscribeConfigs,
@@ -23,22 +24,25 @@ import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
 import { MAX_DISPLAY_MESSAGES } from "../Shared/constants";
 import SolaceMessage from "./SolaceMessage";
-import { SquareX, Trash2 } from "lucide-react";
-import solace from "solclientjs";
+import ErrorMessage from "../Shared/components/ErrorMessage";
 
 const SubscribeView = () => {
   const [solaceConnection, setSolaceConnection] =
     useState<SolaceManager | null>(null);
 
+  const [queueConsumer, setQueueConsumer] =
+    useState<solace.MessageConsumer | null>(null);
+
   const [topics, setTopics] = useState<string[]>([]);
-  const [bindType, setBindType] = useState<BindTypes>();
-  const [bindValue, setBindValue] = useState<string>();
+  const [queueType, setQueueType] = useState<solace.QueueType>();
+  const [queueName, setQueueName] = useState<string>();
   const [bindTopic, setBindTopic] = useState<string>();
 
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [topicInputField, setTopicInputField] = useState<string>("");
   const [openBindSettings, setOpenBindSettings] = useState(false);
+  const [queueError, setQueueError] = useState<string | null>(null);
 
   const [stats, setStats] = useState<SubscribeStats>({
     direct: 0,
@@ -74,9 +78,9 @@ const SubscribeView = () => {
 
     setMessages((prevMessages) => {
       if (prevMessages.length >= MAX_DISPLAY_MESSAGES) {
-        prevMessages.shift();
+        prevMessages.pop();
       }
-      return [...prevMessages, message];
+      return [message, ...prevMessages];
     });
   };
 
@@ -90,22 +94,34 @@ const SubscribeView = () => {
     setTopics(topics.filter((t) => t !== topic));
   };
 
+  const startQueueConsumer = () => {
+    const consumer = solaceConnection?.consumeQueue(
+      queueName!,
+      queueType!,
+      (error) => {
+        setQueueError(error.message);
+        setQueueConsumer(null);
+      }
+    );
+    if (consumer) {
+      setQueueConsumer(consumer);
+    }
+  };
+
   const configs: SubscribeConfigs = {
     topics,
-    bindType,
-    bindValue,
+    queueType,
+    queueName,
     bindTopic,
   };
 
   const onLoadConfig = (config: Configs) => {
     const {
       topics: newTopics,
-      bindType,
-      bindValue,
+      queueType,
+      queueName,
       bindTopic,
     } = config as SubscribeConfigs;
-
-    console.log("topics:", newTopics, topics);
 
     topics.forEach((topic) => {
       unsubscribeTopic(topic);
@@ -114,10 +130,10 @@ const SubscribeView = () => {
       subscribeTopic(topic);
     });
 
-    setBindType(bindType);
-    setBindValue(bindValue);
+    setQueueType(queueType);
+    setQueueName(queueName);
     setBindTopic(bindTopic);
-    if (bindType) {
+    if (queueType) {
       setOpenBindSettings(true);
     } else {
       setOpenBindSettings(false);
@@ -177,11 +193,11 @@ const SubscribeView = () => {
           selectedKeys={openBindSettings ? ["bind-settings"] : []}
           onSelectionChange={(selectedKeys) => {
             if (Array.from(selectedKeys).length) {
-              setBindType(BindTypes.QUEUE);
+              setQueueType(solace.QueueType.QUEUE);
               setOpenBindSettings(true);
             } else {
-              setBindType(undefined);
-              setBindValue(undefined);
+              setQueueType(undefined);
+              setQueueName(undefined);
               setBindTopic(undefined);
               setOpenBindSettings(false);
             }
@@ -195,32 +211,35 @@ const SubscribeView = () => {
             <div className="flex flex-col gap-4 pl-2">
               <RadioGroup
                 orientation="horizontal"
-                value={bindType}
+                value={queueType}
                 isDisabled={!solaceConnection}
                 onValueChange={(value) => {
                   console.log(value);
-                  setBindType(value as BindTypes);
+                  setQueueType(value as solace.QueueType);
                 }}
               >
-                <Radio className="capitalize" value={BindTypes.QUEUE}>
+                <Radio className="capitalize" value={solace.QueueType.QUEUE}>
                   Queue
                 </Radio>
-                <Radio className="capitalize" value={BindTypes.TOPIC_ENDPOINT}>
+                <Radio
+                  className="capitalize"
+                  value={solace.QueueType.TOPIC_ENDPOINT}
+                >
                   Topic Endpoint
                 </Radio>
               </RadioGroup>
               <Input
                 label={
-                  bindType === BindTypes.QUEUE
+                  queueType === solace.QueueType.QUEUE
                     ? "Queue Name"
                     : "Topic Endpoint Name"
                 }
                 isRequired
-                value={bindValue || ""}
-                onValueChange={setBindValue}
+                value={queueName || ""}
+                onValueChange={setQueueName}
                 isDisabled={!solaceConnection}
               />
-              {bindType === BindTypes.TOPIC_ENDPOINT && (
+              {queueType === solace.QueueType.TOPIC_ENDPOINT && (
                 <Input
                   label="Topic"
                   value={bindTopic || ""}
@@ -231,17 +250,25 @@ const SubscribeView = () => {
               )}
               <Button
                 color="primary"
+                variant={queueConsumer ? "bordered" : "solid"}
                 onPress={() => {
-                  // TODO: Start consuming messages
+                  setQueueError(null);
+                  if (queueConsumer) {
+                    queueConsumer.disconnect();
+                    setQueueConsumer(null);
+                  } else {
+                    startQueueConsumer();
+                  }
                 }}
                 isDisabled={
                   !solaceConnection ||
-                  !bindValue ||
-                  (bindType === BindTypes.TOPIC_ENDPOINT && !bindTopic)
+                  !queueName ||
+                  (queueType === solace.QueueType.TOPIC_ENDPOINT && !bindTopic)
                 }
               >
-                Start Consume
+                {queueConsumer ? "Stop Consume" : "Start Consume"}
               </Button>
+              {queueError && <ErrorMessage>{queueError}</ErrorMessage>}
             </div>
           </AccordionItem>
         </Accordion>
