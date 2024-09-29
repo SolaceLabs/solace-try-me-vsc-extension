@@ -64,24 +64,28 @@ const ConfigModal = ({
                 label="Title"
                 value={title}
                 onValueChange={setTitle}
+                isRequired
               />
               <Input
                 type="url"
                 label="URL"
                 value={url}
                 onValueChange={setUrl}
+                isRequired
               />
               <Input
                 type="text"
                 label="VPN"
                 value={vpn}
                 onValueChange={setVpn}
+                isRequired
               />
               <Input
                 type="text"
                 label="Username"
                 value={username}
                 onValueChange={setUsername}
+                isRequired
               />
               <Input
                 type={visiblePassword ? "text" : "password"}
@@ -102,6 +106,7 @@ const ConfigModal = ({
                 label="Password"
                 value={password}
                 onValueChange={setPassword}
+                isRequired
               />
             </ModalBody>
             <ModalFooter>

@@ -215,6 +215,7 @@ const ConfigStore = ({
                   onValueChange={setTempName}
                   isInvalid={tempNameExists}
                   errorMessage="Name already exists"
+                  isRequired
                 />
               </ModalBody>
               <ModalFooter>

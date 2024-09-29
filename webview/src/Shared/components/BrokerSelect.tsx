@@ -36,6 +36,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
       className="w-auto flex-grow min-w-40"
       onClick={(open) => open && fetchBrokers()}
       disabledKeys={["no-item-available"]}
+      isRequired
       onSelectionChange={(selection) => {
         const values = Array.from(selection);
         if (values.length > 0) {

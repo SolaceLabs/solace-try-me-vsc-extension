@@ -42,3 +42,6 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
     publishConfig: [],
   },
 };
+
+
+export const MAX_DISPLAY_MESSAGES = 20

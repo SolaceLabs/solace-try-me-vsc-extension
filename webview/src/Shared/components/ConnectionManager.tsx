@@ -5,6 +5,7 @@ import SolaceManager from "../SolaceManager";
 import { compareBrokerConfigs } from "../utils";
 import { Button } from "@nextui-org/react";
 import { Link2, Link2Off } from "lucide-react";
+import ErrorMessage from "./ErrorMessage";
 
 interface ConnectionManagerProps {
   onSetConnection: (connection: SolaceManager | null) => void;
@@ -110,15 +111,15 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
   }
 
   return (
-    <>
-      <div className="flex gap-2 items-center justify-between flex-wrap">
+    <div>
+      <div className="flex gap-4 items-center justify-between flex-wrap">
         <BrokerSelect onBrokerSelect={setCurrentBroker} />
         <Button {...buttonProps} />
       </div>
       {connectionError && (
-        <div className="text-red-500 text-sm p-2">{connectionError}</div>
+        <ErrorMessage>{connectionError}</ErrorMessage>
       )}
-    </>
+    </div>
   );
 };
 

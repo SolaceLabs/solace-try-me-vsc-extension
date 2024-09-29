@@ -22,6 +22,7 @@ import {
 } from "../Shared/interfaces";
 import ConfigStore from "../Shared/components/ConfigStore";
 import { Delete, Trash2 } from "lucide-react";
+import ErrorMessage from "../Shared/components/ErrorMessage";
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -92,6 +93,7 @@ const PublishView = () => {
           label="Select a topic or queue to publish to"
           orientation="horizontal"
           value={destinationType}
+          isDisabled={!solaceConnection}
           onValueChange={(value) =>
             setDestinationType(value as DestinationType)
           }
@@ -106,11 +108,14 @@ const PublishView = () => {
         <Input
           label={`Publish to ${destinationType}`}
           value={publishTo}
+          isRequired
+          isDisabled={!solaceConnection}
           onValueChange={setPublishTo}
         />
         <RadioGroup
           label="Delivery Mode"
           orientation="horizontal"
+          isDisabled={!solaceConnection}
           value={deliveryMode.toString()}
           onValueChange={(value) =>
             setDeliveryMode(Number(value) as MessageDeliveryModeType)
@@ -131,8 +136,10 @@ const PublishView = () => {
         </RadioGroup>
         <Textarea
           label="Message Content"
+          isDisabled={!solaceConnection}
           value={content}
           onValueChange={setContent}
+          isRequired
         />
         <Accordion
           isCompact
@@ -158,6 +165,7 @@ const PublishView = () => {
           >
             <div className="flex flex-col gap-4 pl-2">
               <Switch
+                isDisabled={!solaceConnection}
                 isSelected={advancedSettings.dmqEligible}
                 onValueChange={(dmqEligible) =>
                   setAdvancedSettings((prev) => ({ ...prev, dmqEligible }))
@@ -167,6 +175,7 @@ const PublishView = () => {
               </Switch>
               <Slider
                 size="sm"
+                isDisabled={!solaceConnection}
                 step={1}
                 label="Message Priority"
                 showSteps={true}
@@ -186,6 +195,7 @@ const PublishView = () => {
               <Input
                 label="Time to Live (sec)"
                 type="number"
+                isDisabled={!solaceConnection}
                 min={0}
                 value={(advancedSettings.timeToLive || "") as unknown as string}
                 onValueChange={(timeToLive) =>
@@ -197,6 +207,7 @@ const PublishView = () => {
               />
               <Input
                 label="Reply To Topic"
+                isDisabled={!solaceConnection}
                 value={advancedSettings.replyToTopic || ""}
                 onValueChange={(replyToTopic) =>
                   setAdvancedSettings((prev) => ({ ...prev, replyToTopic }))
@@ -204,6 +215,7 @@ const PublishView = () => {
               />
               <Input
                 label="Correlation ID"
+                isDisabled={!solaceConnection}
                 value={advancedSettings.correlationId || ""}
                 onValueChange={(correlationId) =>
                   setAdvancedSettings((prev) => ({ ...prev, correlationId }))
@@ -247,11 +259,12 @@ const PublishView = () => {
       <div className="flex justify-between items-end gap-4 mt-4">
         <div>
           <small>Messages Published</small>
-          <br></br>
-          <small className="pr-4">Direct: {stats.direct}</small>
-          <small>Persistent: {stats.persistent}</small>
+          <div className="flex gap-4 flex-wrap">
+            <small>Direct: {stats.direct}</small>
+            <small>Persistent: {stats.persistent}</small>
+          </div>
         </div>
-        <div className="flex justify-between flex-co items-end gap-1 mt-3">
+        <div className="fle flex-wrap justify-between items-end gap-1 mt-3">
           <Button
             size="sm"
             variant="bordered"
@@ -280,9 +293,7 @@ const PublishView = () => {
           </Button>
         </div>
       </div>
-      {errorMessage && (
-        <div className="text-red-500 text-sm mt-2">{errorMessage}</div>
-      )}
+      {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
     </div>
   );
 };

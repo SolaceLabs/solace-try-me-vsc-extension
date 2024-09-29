@@ -40,13 +40,32 @@ export interface PublishConfigs extends PublishOptions {
   content: string;
 }
 
-export interface SubscribeConfigs {
+export enum BindTypes {
+  QUEUE = "queue",
+  TOPIC_ENDPOINT = "topic-endpoint",
+}
 
+export interface SubscribeConfigs {
+  topics: string[];
+  bindType?: BindTypes;
+  bindValue?: string;
+  bindTopic?: string;
 }
 
 export interface PublishStats {
   direct: number;
   persistent: number;
+}
+
+export interface SubscribeStats {
+  direct: number;
+  persistent: number;
+  nonPersistent: number;
+}
+
+export interface Message {
+  payload: string;
+  topic: string;
 }
 
 export type Configs = PublishConfigs | SubscribeConfigs;
