@@ -67,6 +67,19 @@ export interface SubscribeStats {
 export interface Message {
   payload: string;
   topic: string;
+  userProperties: { [key: string]: unknown }
+  metadata: {
+    deliveryMode: solace.MessageDeliveryModeType;
+    redelivered: boolean;
+    senderId: string | null;
+    replyTo: string | null;
+    correlationId: string | null;
+    ttl: number | null;
+    senderTimestamp: number | null;
+    receiverTimestamp: number | null;
+    priority: number | null;
+    isDMQEligible: boolean;
+  }
 }
 
 export type Configs = PublishConfigs | SubscribeConfigs;

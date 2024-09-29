@@ -20,12 +20,14 @@ interface ConfigStoreProps {
   currentConfig: Configs;
   onLoadConfig: (config: Configs) => void;
   storeKey: "publishConfig" | "subscribeConfig";
+  isDisabled?: boolean;
 }
 
 const ConfigStore = ({
   currentConfig,
   onLoadConfig,
   storeKey,
+  isDisabled=false,
 }: ConfigStoreProps) => {
   const [lastSavedConfig, setLastSavedConfig] = useState<Configs>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -113,6 +115,7 @@ const ConfigStore = ({
         <Select
           label="Preset Configuration"
           placeholder="Load a saved configuration"
+          isDisabled={isDisabled}
           size="sm"
           className="w-auto flex-grow min-w-40"
           selectedKeys={
@@ -176,6 +179,7 @@ const ConfigStore = ({
               variant="bordered"
               className="capitalize"
               onClick={() => setShowNameModal(true)}
+              isDisabled={isDisabled}
               size="sm"
             >
               <Save size={12} />
@@ -189,6 +193,7 @@ const ConfigStore = ({
                 className="capitalize"
                 size="sm"
                 onClick={() => onConfigSave(selectedConfigName)}
+                isDisabled={isDisabled}
               >
                 <RefreshCcw size={16} />
               </Button>

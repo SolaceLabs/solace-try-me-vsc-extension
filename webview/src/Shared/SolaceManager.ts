@@ -1,10 +1,12 @@
 import solace, { SolclientFactory } from "solclientjs";
-import { BrokerConfig, PublishOptions } from "./interfaces";
+import { BrokerConfig, Message, PublishOptions } from "./interfaces";
+
+type onMessageCallback = (message: Message) => void;
 
 class SolaceManager {
   session: solace.Session | undefined;
   isConnected = false;
-  onMessage!: (topic: string, content: unknown) => void;
+  onMessage!: onMessageCallback;
   brokerConfig!: BrokerConfig;
   onConnectionStateChange!: (
     isConnected: boolean,
@@ -76,10 +78,20 @@ class SolaceManager {
     this.session.on(solace.SessionEventCode.MESSAGE, (message) => {
       const destination = message.getDestination();
       const topic = destination ? destination.getName() : "unknown";
-      const binaryAttachment = message.getBinaryAttachment();
-      const content = binaryAttachment
-        ? JSON.parse(binaryAttachment as string)
-        : {};
+      const payload = message.getBinaryAttachment()?.toString() ?? "";
+      const metadata: Message["metadata"] = {
+        deliveryMode: message.getDeliveryMode(),
+        isDMQEligible: message.isDMQEligible(),
+        ttl: message.getTimeToLive(),
+        priority: message.getPriority(),
+        replyTo: message.getReplyTo()?.getName() || null,
+        senderId: message.getSenderId(),
+        correlationId: message.getCorrelationId(),
+        redelivered: message.isRedelivered(),
+        senderTimestamp: message.getSenderTimestamp(),
+        receiverTimestamp: message.getReceiverTimestamp(),
+      };
+
       const userProperties: { [key: string]: unknown } = {};
       const userPropertyMap = message.getUserPropertyMap();
       if (userPropertyMap) {
@@ -87,12 +99,13 @@ class SolaceManager {
           userProperties[key] = userPropertyMap.getField(key);
         });
       }
-      console.debug("Received message:", topic, content, userProperties);
-      this.onMessage(topic, content);
+      const messageObj = { topic, payload, userProperties, metadata };
+      console.debug("Received message:", messageObj);
+      this.onMessage(messageObj);
     });
   }
 
-  setOnMessage(onMessage: (topic: string, content: unknown) => void) {
+  setOnMessage(onMessage: onMessageCallback) {
     this.onMessage = onMessage;
   }
 
@@ -110,6 +123,23 @@ class SolaceManager {
       console.log("Subscribed to topic:", topic);
     } catch (subscribeError) {
       console.error("Error subscribing to topic:", topic, subscribeError);
+    }
+  }
+
+  unsubscribe(topic: string) {
+    try {
+      if (!this.session) {
+        throw new Error("Session not initialized");
+      }
+      this.session.unsubscribe(
+        SolclientFactory.createTopicDestination(topic),
+        true,
+        topic,
+        10000
+      );
+      console.log("Unsubscribed from topic:", topic);
+    } catch (unsubscribeError) {
+      console.error("Error unsubscribing from topic:", topic, unsubscribeError);
     }
   }
 

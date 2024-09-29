@@ -24,6 +24,7 @@ import SolaceManager from "../Shared/SolaceManager";
 import { MAX_DISPLAY_MESSAGES } from "../Shared/constants";
 import SolaceMessage from "./SolaceMessage";
 import { SquareX, Trash2 } from "lucide-react";
+import solace from "solclientjs";
 
 const SubscribeView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -46,14 +47,29 @@ const SubscribeView = () => {
   });
 
   useEffect(() => {
-    // TODO: unsubscribe from all topics
+    setTopics([]);
+    if (solaceConnection) {
+      solaceConnection.onMessage = (message: Message) => {
+        addMessage(message);
+      };
+    }
   }, [solaceConnection]);
 
   const addMessage = (message: Message) => {
     setStats((prevStats) => {
-      // TODO: Update stats
-      prevStats.direct += 1;
-      return prevStats;
+      const newStats = { ...prevStats };
+      switch (message.metadata.deliveryMode) {
+        case solace.MessageDeliveryModeType.DIRECT:
+          newStats.direct += 1;
+          break;
+        case solace.MessageDeliveryModeType.PERSISTENT:
+          newStats.persistent += 1;
+          break;
+        case solace.MessageDeliveryModeType.NON_PERSISTENT:
+          newStats.nonPersistent += 1;
+          break;
+      }
+      return newStats;
     });
 
     setMessages((prevMessages) => {
@@ -65,15 +81,12 @@ const SubscribeView = () => {
   };
 
   const subscribeTopic = (topic: string) => {
-    // TODO: Subscribe to topic
-    addMessage({
-      topic: topic,
-      payload: "Hello, World!",
-    });
+    solaceConnection?.subscribe(topic);
     setTopics([...topics, topic]);
   };
 
   const unsubscribeTopic = (topic: string) => {
+    solaceConnection?.unsubscribe(topic);
     setTopics(topics.filter((t) => t !== topic));
   };
 
@@ -85,9 +98,22 @@ const SubscribeView = () => {
   };
 
   const onLoadConfig = (config: Configs) => {
-    const { topics, bindType, bindValue, bindTopic } =
-      config as SubscribeConfigs;
-    setTopics(topics);
+    const {
+      topics: newTopics,
+      bindType,
+      bindValue,
+      bindTopic,
+    } = config as SubscribeConfigs;
+
+    console.log("topics:", newTopics, topics);
+
+    topics.forEach((topic) => {
+      unsubscribeTopic(topic);
+    });
+    newTopics.forEach((topic) => {
+      subscribeTopic(topic);
+    });
+
     setBindType(bindType);
     setBindValue(bindValue);
     setBindTopic(bindTopic);
@@ -106,6 +132,7 @@ const SubscribeView = () => {
         storeKey="subscribeConfig"
         currentConfig={configs}
         onLoadConfig={onLoadConfig}
+        isDisabled={!solaceConnection}
       />
       <div className="flex flex-col gap-4">
         <ConnectionManager onSetConnection={setSolaceConnection} />
