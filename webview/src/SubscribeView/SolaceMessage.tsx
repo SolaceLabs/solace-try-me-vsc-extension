@@ -32,6 +32,8 @@ const valueTransformMap: { [k: string]: (value: unknown) => string } = {
   isDMQEligible: (value: unknown) => (value ? "Yes" : "No"),
   ttl: (value: unknown) => `${Number(value) / 1000} sec`,
   replyTo: (value: unknown) => `[Topic ${value}]`,
+  receiverTimestamp: (value: unknown) => formatDate(value as number),
+  senderTimestamp: (value: unknown) => formatDate(value as number),
   deliveryMode: (value: unknown) =>
     value === MessageDeliveryModeType.PERSISTENT
       ? "Persistent"

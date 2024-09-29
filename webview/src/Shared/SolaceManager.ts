@@ -43,7 +43,8 @@ class SolaceManager {
         userProperties[key] = userPropertyMap.getField(key);
       });
     }
-    const messageObj = { topic, payload, userProperties, metadata };
+    const uid = Math.random().toString(36).substring(7) + Date.now();
+    const messageObj = { topic, payload, userProperties, metadata, _extension_uid: uid };
     console.debug("Received message:", messageObj);
     this.onMessage(messageObj);
   }

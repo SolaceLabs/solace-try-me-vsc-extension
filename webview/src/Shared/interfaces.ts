@@ -41,7 +41,6 @@ export interface PublishConfigs extends PublishOptions {
   content: string;
 }
 
-
 export interface SubscribeConfigs {
   topics: string[];
   queueType?: solace.QueueType;
@@ -63,7 +62,8 @@ export interface SubscribeStats {
 export interface Message {
   payload: string;
   topic: string;
-  userProperties: { [key: string]: unknown }
+  userProperties: { [key: string]: unknown };
+  _extension_uid: string;
   metadata: {
     deliveryMode: solace.MessageDeliveryModeType;
     redelivered: boolean;
@@ -75,7 +75,7 @@ export interface Message {
     receiverTimestamp: number;
     priority: number | null;
     isDMQEligible: boolean;
-  }
+  };
 }
 
 export type Configs = PublishConfigs | SubscribeConfigs;

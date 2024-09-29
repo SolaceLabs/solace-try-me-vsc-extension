@@ -311,8 +311,8 @@ const SubscribeView = () => {
         </div>
         {messages.length !== 0 && (
           <ScrollShadow className="h-[500px] w-full">
-            {messages.map((message, index) => (
-              <SolaceMessage key={index} message={message} />
+            {messages.map((message) => (
+              <SolaceMessage key={message._extension_uid} message={message} />
             ))}
           </ScrollShadow>
         )}

@@ -5,7 +5,12 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       "solaceTryMeVscExtension.sideView",
-      new SolaceTryMeViewProvider(context)
+      new SolaceTryMeViewProvider(context),
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      }
     )
   );
 }
