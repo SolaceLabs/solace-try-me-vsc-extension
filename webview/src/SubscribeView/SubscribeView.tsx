@@ -128,11 +128,12 @@ const SubscribeView = () => {
     } = config as SubscribeConfigs;
 
     topics.forEach((topic) => {
-      unsubscribeTopic(topic);
+      solaceConnection?.unsubscribe(topic);
     });
     newTopics.forEach((topic) => {
-      subscribeTopic(topic);
+      solaceConnection?.subscribe(topic);
     });
+    setTopics(newTopics);
 
     setQueueType(queueType);
     setQueueName(queueName);
