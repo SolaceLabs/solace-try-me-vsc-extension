@@ -3,6 +3,11 @@ import { BrokerConfig, Message, PublishOptions } from "./interfaces";
 
 type onMessageCallback = (message: Message) => void;
 
+const factoryProps = new solace.SolclientFactoryProperties();
+factoryProps.profile = solace.SolclientFactoryProfiles.version10_5
+SolclientFactory.init(factoryProps);
+SolclientFactory.setLogLevel(solace.LogLevel.DEBUG);
+
 class SolaceManager {
   session: solace.Session | undefined;
   isConnected = false;
