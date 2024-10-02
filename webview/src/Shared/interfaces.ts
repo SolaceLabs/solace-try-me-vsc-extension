@@ -34,6 +34,7 @@ export interface PublishOptions {
   timeToLive?: number;
   replyToTopic?: string;
   correlationId?: string;
+  sendAsByteMessage?: boolean;
 }
 
 export interface PublishConfigs extends PublishOptions {

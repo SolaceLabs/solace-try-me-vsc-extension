@@ -24,6 +24,8 @@ import ConfigStore from "../Shared/components/ConfigStore";
 import { Delete, Trash2 } from "lucide-react";
 import ErrorMessage from "../Shared/components/ErrorMessage";
 
+const DEFAULT_PRIORITY = 4;
+
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
     useState<SolaceManager | null>(null);
@@ -150,7 +152,8 @@ const PublishView = () => {
               setAdvancedSettings({
                 ...advancedSettings,
                 dmqEligible: advancedSettings.dmqEligible ?? false,
-                priority: advancedSettings.priority ?? 0,
+                priority: advancedSettings.priority ?? DEFAULT_PRIORITY,
+                sendAsByteMessage: advancedSettings.sendAsByteMessage ?? false,
               });
             } else {
               setAdvancedSettings({});
@@ -172,6 +175,15 @@ const PublishView = () => {
                 }
               >
                 DMQ Eligible
+              </Switch>
+              <Switch
+                isDisabled={!solaceConnection}
+                isSelected={advancedSettings.sendAsByteMessage}
+                onValueChange={(sendAsByteMessage) =>
+                  setAdvancedSettings((prev) => ({ ...prev, sendAsByteMessage }))
+                }
+              >
+                Send as Byte Message
               </Switch>
               <Slider
                 size="sm"
