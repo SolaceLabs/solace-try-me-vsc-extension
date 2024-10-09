@@ -13,7 +13,7 @@ import {
 
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
-import { DestinationType, MessageDeliveryModeType } from "solclientjs";
+import { DestinationType, MessageDeliveryModeType, MessageType } from "solclientjs";
 import {
   Configs,
   PublishConfigs,
@@ -25,6 +25,7 @@ import { Delete, Trash2 } from "lucide-react";
 import ErrorMessage from "../Shared/components/ErrorMessage";
 
 const DEFAULT_PRIORITY = 4;
+const DEFAULT_DMQ_ELIGIBLE = true;
 
 const PublishView = () => {
   const [solaceConnection, setSolaceConnection] =
@@ -37,6 +38,7 @@ const PublishView = () => {
   const [deliveryMode, setDeliveryMode] = useState<MessageDeliveryModeType>(
     MessageDeliveryModeType.DIRECT
   );
+  const [messageType, setMessageType] = useState<MessageType>(MessageType.TEXT);
   const [content, setContent] = useState<string>("");
   const [advancedSettings, setAdvancedSettings] = useState<
     Partial<PublishOptions>
@@ -58,6 +60,7 @@ const PublishView = () => {
     content,
     deliveryMode,
     destinationType,
+    messageType,
     ...advancedSettings,
   };
 
@@ -114,28 +117,56 @@ const PublishView = () => {
           isDisabled={!solaceConnection}
           onValueChange={setPublishTo}
         />
-        <RadioGroup
-          label="Delivery Mode"
-          orientation="horizontal"
-          isDisabled={!solaceConnection}
-          value={deliveryMode.toString()}
-          onValueChange={(value) =>
-            setDeliveryMode(Number(value) as MessageDeliveryModeType)
-          }
-        >
-          <Radio
-            className="capitalize"
-            value={MessageDeliveryModeType.DIRECT.toString()}
+        <div className="flex flex-row flex-wrap gap-4 justify-between">
+          <RadioGroup
+            label="Delivery Mode"
+            orientation="horizontal"
+            isDisabled={!solaceConnection}
+            value={deliveryMode.toString()}
+            onValueChange={(value) =>
+              setDeliveryMode(Number(value) as MessageDeliveryModeType)
+            }
           >
-            Direct
-          </Radio>
-          <Radio
-            className="capitalize"
-            value={MessageDeliveryModeType.PERSISTENT.toString()}
+            <Radio
+              className="capitalize"
+              value={MessageDeliveryModeType.DIRECT.toString()}
+              size="sm"
+            >
+              Direct
+            </Radio>
+            <Radio
+              className="capitalize"
+              size="sm"
+              value={MessageDeliveryModeType.PERSISTENT.toString()}
+            >
+              Persistent
+            </Radio>
+          </RadioGroup>
+          <RadioGroup
+            label="Message Type"
+            orientation="horizontal"
+            isDisabled={!solaceConnection}
+            value={messageType.toString()}
+            onValueChange={(value) =>
+              setMessageType(Number(value) as MessageType)
+            }
           >
-            Persistent
-          </Radio>
-        </RadioGroup>
+            <Radio
+              className="capitalize"
+              size="sm"
+              value={MessageType.TEXT.toString()}
+            >
+              TextMessage
+            </Radio>
+            <Radio
+              className="capitalize"
+              size="sm"
+              value={MessageType.BINARY.toString()}
+            >
+              ByteMessage
+            </Radio>
+          </RadioGroup>
+        </div>
         <Textarea
           label="Message Content"
           isDisabled={!solaceConnection}
@@ -151,9 +182,8 @@ const PublishView = () => {
               setOpenAdvancedSettings(true);
               setAdvancedSettings({
                 ...advancedSettings,
-                dmqEligible: advancedSettings.dmqEligible ?? false,
+                dmqEligible: advancedSettings.dmqEligible ?? DEFAULT_DMQ_ELIGIBLE,
                 priority: advancedSettings.priority ?? DEFAULT_PRIORITY,
-                sendAsByteMessage: advancedSettings.sendAsByteMessage ?? false,
               });
             } else {
               setAdvancedSettings({});
@@ -175,15 +205,6 @@ const PublishView = () => {
                 }
               >
                 DMQ Eligible
-              </Switch>
-              <Switch
-                isDisabled={!solaceConnection}
-                isSelected={advancedSettings.sendAsByteMessage}
-                onValueChange={(sendAsByteMessage) =>
-                  setAdvancedSettings((prev) => ({ ...prev, sendAsByteMessage }))
-                }
-              >
-                Send as Byte Message
               </Switch>
               <Slider
                 size="sm"
@@ -243,6 +264,7 @@ const PublishView = () => {
             const options: PublishOptions = {
               deliveryMode,
               destinationType,
+              messageType,
               ...advancedSettings,
             };
             const error = solaceConnection?.publish(

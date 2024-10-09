@@ -34,7 +34,7 @@ export interface PublishOptions {
   timeToLive?: number;
   replyToTopic?: string;
   correlationId?: string;
-  sendAsByteMessage?: boolean;
+  messageType?: solace.MessageType;
 }
 
 export interface PublishConfigs extends PublishOptions {

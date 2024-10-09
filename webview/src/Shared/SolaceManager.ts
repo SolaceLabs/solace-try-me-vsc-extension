@@ -249,7 +249,7 @@ class SolaceManager {
       if (options.correlationId !== undefined) {
         message.setCorrelationId(options.correlationId);
       }
-      if (options.sendAsByteMessage) {
+      if (options.messageType === solace.MessageType.BINARY) {
         message.setSdtContainer(solace.SDTField.create(solace.SDTFieldType.STRING, content));
       } else {
         message.setBinaryAttachment(content);
