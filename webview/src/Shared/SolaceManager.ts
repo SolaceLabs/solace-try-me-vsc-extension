@@ -1,10 +1,15 @@
 import solace, { SolclientFactory } from "solclientjs";
-import { BrokerConfig, Message, PublishOptions } from "./interfaces";
+import {
+  BrokerConfig,
+  Message,
+  PublishOptions,
+  UserPropertiesMap,
+} from "./interfaces";
 
 type onMessageCallback = (message: Message) => void;
 
 const factoryProps = new solace.SolclientFactoryProperties();
-factoryProps.profile = solace.SolclientFactoryProfiles.version10_5
+factoryProps.profile = solace.SolclientFactoryProfiles.version10_5;
 SolclientFactory.init(factoryProps);
 SolclientFactory.setLogLevel(solace.LogLevel.DEBUG);
 
@@ -45,7 +50,11 @@ class SolaceManager {
     const userPropertyMap = message.getUserPropertyMap();
     if (userPropertyMap) {
       userPropertyMap.getKeys().forEach((key) => {
-        userProperties[key] = userPropertyMap.getField(key);
+        const field = userPropertyMap.getField(key);
+        userProperties[key] = {
+          type: field.getType(),
+          value: field.getValue(),
+        }
       });
     }
     const uid = Math.random().toString(36).substring(7) + Date.now();
@@ -120,6 +129,24 @@ class SolaceManager {
       solace.SessionEventCode.MESSAGE,
       this.handleMessage.bind(this)
     );
+  }
+
+  addUserPropertiesToMessage(
+    message: solace.Message,
+    userProperties: UserPropertiesMap
+  ) {
+    let userPropertyMap = message.getUserPropertyMap();
+    if (!userPropertyMap) {
+      userPropertyMap = new solace.SDTMapContainer();
+    }
+    Object.keys(userProperties).forEach((key) => {
+      userPropertyMap.addField(
+        key,
+        userProperties[key].type,
+        userProperties[key].value
+      );
+    });
+    message.setUserPropertyMap(userPropertyMap);
   }
 
   setOnMessage(onMessage: onMessageCallback) {
@@ -250,9 +277,17 @@ class SolaceManager {
         message.setCorrelationId(options.correlationId);
       }
       if (options.messageType === solace.MessageType.BINARY) {
-        message.setSdtContainer(solace.SDTField.create(solace.SDTFieldType.STRING, content));
+        message.setSdtContainer(
+          solace.SDTField.create(solace.SDTFieldType.STRING, content)
+        );
       } else {
         message.setBinaryAttachment(content);
+      }
+      if (
+        options.userProperties &&
+        Object.keys(options.userProperties).length
+      ) {
+        this.addUserPropertiesToMessage(message, options.userProperties);
       }
       this.session.send(message);
       console.debug("Published message:", name, content, options);

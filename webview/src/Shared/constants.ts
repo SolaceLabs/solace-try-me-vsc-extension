@@ -20,4 +20,7 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
 
 export const MAX_DISPLAY_MESSAGES = 20;
 
-export const MAC_PAYLOAD_LENGTH = 1024;
+export const MAX_PAYLOAD_LENGTH = 1024;
+
+export const MAX_PROPERTY_LENGTH = 128;
+

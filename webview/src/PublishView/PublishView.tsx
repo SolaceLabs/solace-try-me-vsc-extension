@@ -13,16 +13,22 @@ import {
 
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
-import { DestinationType, MessageDeliveryModeType, MessageType } from "solclientjs";
+import {
+  DestinationType,
+  MessageDeliveryModeType,
+  MessageType,
+} from "solclientjs";
 import {
   Configs,
   PublishConfigs,
   PublishOptions,
   PublishStats,
+  UserPropertiesMap,
 } from "../Shared/interfaces";
 import ConfigStore from "../Shared/components/ConfigStore";
 import { Delete, Trash2 } from "lucide-react";
 import ErrorMessage from "../Shared/components/ErrorMessage";
+import UserProperties from "./UserProperties";
 
 const DEFAULT_PRIORITY = 4;
 const DEFAULT_DMQ_ELIGIBLE = true;
@@ -40,6 +46,7 @@ const PublishView = () => {
   );
   const [messageType, setMessageType] = useState<MessageType>(MessageType.TEXT);
   const [content, setContent] = useState<string>("");
+  const [userProperties, setUserProperties] = useState<UserPropertiesMap>({});
   const [advancedSettings, setAdvancedSettings] = useState<
     Partial<PublishOptions>
   >({});
@@ -61,6 +68,7 @@ const PublishView = () => {
     deliveryMode,
     destinationType,
     messageType,
+    userProperties,
     ...advancedSettings,
   };
 
@@ -70,12 +78,16 @@ const PublishView = () => {
       content,
       deliveryMode,
       destinationType,
+      messageType,
+      userProperties,
       ...advancedSettings
     } = config as PublishConfigs;
     setPublishTo(publishTo);
     setContent(content);
+    setUserProperties(userProperties ?? {});
     if (deliveryMode !== undefined) setDeliveryMode(deliveryMode);
     if (destinationType !== undefined) setDestinationType(destinationType);
+    if (messageType !== undefined) setMessageType(messageType);
     if (Object.keys(advancedSettings).length) {
       setAdvancedSettings(advancedSettings);
       setOpenAdvancedSettings(true);
@@ -142,6 +154,10 @@ const PublishView = () => {
               Persistent
             </Radio>
           </RadioGroup>
+          <UserProperties
+            userProperties={userProperties}
+            setUserProperties={setUserProperties}
+          />
           <RadioGroup
             label="Message Type"
             orientation="horizontal"
@@ -182,7 +198,8 @@ const PublishView = () => {
               setOpenAdvancedSettings(true);
               setAdvancedSettings({
                 ...advancedSettings,
-                dmqEligible: advancedSettings.dmqEligible ?? DEFAULT_DMQ_ELIGIBLE,
+                dmqEligible:
+                  advancedSettings.dmqEligible ?? DEFAULT_DMQ_ELIGIBLE,
                 priority: advancedSettings.priority ?? DEFAULT_PRIORITY,
               });
             } else {
@@ -265,6 +282,7 @@ const PublishView = () => {
               deliveryMode,
               destinationType,
               messageType,
+              userProperties,
               ...advancedSettings,
             };
             const error = solaceConnection?.publish(

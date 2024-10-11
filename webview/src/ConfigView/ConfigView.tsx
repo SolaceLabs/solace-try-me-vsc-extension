@@ -95,23 +95,25 @@ const ConfigView = () => {
               <TableCell>{broker.username}</TableCell>
               <TableCell className="flex gap-2">
                 <Tooltip content="Edit Broker Config">
-                  <span
-                    className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                  <Button isIconOnly
+                    className="text-default-400 active:opacity-50"
+                    variant="light"
                     onClick={() => {
                       setSelectedConfig(broker);
                       setShowModal(true);
                     }}
                   >
                     <Pencil />
-                  </span>
+                  </Button>
                 </Tooltip>
                 <Tooltip color="danger" content="Delete Broker Config">
-                  <span
-                    className="text-lg text-danger cursor-pointer active:opacity-50"
+                  <Button isIconOnly
+                    className="text-danger active:opacity-50"
+                    variant="light"
                     onClick={() => deleteConfig(broker.id)}
                   >
                     <Trash2 />
-                  </span>
+                  </Button>
                 </Tooltip>
               </TableCell>
             </TableRow>

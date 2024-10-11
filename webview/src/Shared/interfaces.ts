@@ -35,6 +35,7 @@ export interface PublishOptions {
   replyToTopic?: string;
   correlationId?: string;
   messageType?: solace.MessageType;
+  userProperties?: UserPropertiesMap;
 }
 
 export interface PublishConfigs extends PublishOptions {
@@ -80,3 +81,10 @@ export interface Message {
 }
 
 export type Configs = PublishConfigs | SubscribeConfigs;
+
+export type UserPropertiesMap = {
+  [key: string]: {
+    value: unknown;
+    type: solace.SDTFieldType;
+  };
+};

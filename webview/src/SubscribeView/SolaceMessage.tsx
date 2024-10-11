@@ -8,10 +8,14 @@ import {
 } from "@nextui-org/react";
 
 import { Message } from "../Shared/interfaces";
-import { formatDate, openFileInNewTab } from "../Shared/utils";
+import {
+  convertTypeToString,
+  formatDate,
+  openFileInNewTab,
+} from "../Shared/utils";
 import { ExternalLink } from "lucide-react";
 import { MessageDeliveryModeType } from "solclientjs";
-import { MAC_PAYLOAD_LENGTH } from "../Shared/constants";
+import { MAX_PAYLOAD_LENGTH, MAX_PROPERTY_LENGTH } from "../Shared/constants";
 
 interface SolaceMessageProps {
   message: Message;
@@ -52,18 +56,18 @@ const transformMetaItem = ([key, value]: [string, unknown]) => {
   return [newKey, newValue];
 };
 
-const getPayload = (payload: string) => {
-  return payload.length > MAC_PAYLOAD_LENGTH ? (
+const getContent = (content: string, maxLength = MAX_PAYLOAD_LENGTH) => {
+  return content.length > maxLength ? (
     <>
-      {payload.slice(0, MAC_PAYLOAD_LENGTH)}
+      {content.slice(0, maxLength)}
       <Tooltip
-        content={`Payload truncated to ${MAC_PAYLOAD_LENGTH} character. Open message in VSC to view full payload`}
+        content={`Content truncated to ${maxLength} character. Open message in VSC to view full content.`}
       >
         <span className="text-default">...</span>
       </Tooltip>
     </>
   ) : (
-    payload
+    content
   );
 };
 
@@ -76,11 +80,9 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
     .filter(([, value]) => value !== null && value !== undefined)
     .map(transformMetaItem);
 
-  const userProperties = Object.entries(message.userProperties)
-    .filter(([, value]) => value !== null && value !== undefined)
-    .map(([key, value]) => [key, value?.toString() ?? ""]);
+  const userProperties = Object.entries(message.userProperties);
 
-  const payload = getPayload(message.payload);
+  const payload = getContent(message.payload);
 
   return (
     <Card className="max-w-[400px] mb-3">
@@ -106,8 +108,10 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
         <div className="flex gap-1 flex-col text-sm">
           {metadata.map(([key, value]) => (
             <div key={key} className="flex gap-2">
-              <p className="text-sm capitalize">{key}:</p>
-              <p className="text-sm text-default-500">{value}</p>
+              <p className="text-sm capitalize">{key}</p>
+              <p className="text-sm text-default-500">
+                {getContent(value, MAX_PROPERTY_LENGTH)}
+              </p>
             </div>
           ))}
         </div>
@@ -116,10 +120,19 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
         <>
           <Divider />
           <CardBody>
+            <p className="text-md pb-2">User Properties:</p>
             {userProperties.map(([key, value]) => (
-              <div key={key} className="flex gap-2">
-                <p className="text-sm capitalize">{key}:</p>
-                <p className="text-sm text-default-500">{value}</p>
+              <div key={key} className="flex gap-2 flex-wrap">
+                <p className="text-sm capitalize">
+                  {key} ({convertTypeToString((value as { type: number }).type)}
+                  ):
+                </p>
+                <p className="text-sm text-default-500">
+                  {getContent(
+                    String((value as { value: string }).value),
+                    MAX_PROPERTY_LENGTH
+                  )}
+                </p>
               </div>
             ))}
           </CardBody>

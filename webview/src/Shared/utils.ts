@@ -1,5 +1,6 @@
 import { VSC_CONFIG_DEFAULT } from "./constants";
 import { BrokerConfig, VscConfigInterface, VsCodeApi } from "./interfaces";
+import solace from "solclientjs";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -96,3 +97,27 @@ export function formatDate(date: Date|number): string {
 
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}:${milliseconds}`;
 }
+
+export const convertTypeToString = (type: solace.SDTFieldType) => {
+  switch (type) {
+    case solace.SDTFieldType.BOOL:
+      return "Boolean";
+    case solace.SDTFieldType.INT8:
+    case solace.SDTFieldType.INT16:
+    case solace.SDTFieldType.INT32:
+    case solace.SDTFieldType.INT64:
+    case solace.SDTFieldType.UINT8:
+    case solace.SDTFieldType.UINT16:
+    case solace.SDTFieldType.UINT32:
+    case solace.SDTFieldType.UINT64:
+      return "Integer";
+    case solace.SDTFieldType.WCHAR:
+    case solace.SDTFieldType.STRING:
+      return "String";
+    case solace.SDTFieldType.FLOATTYPE:
+    case solace.SDTFieldType.DOUBLETYPE:
+      return "Float";
+    default:
+      return "Unknown";
+  }
+};

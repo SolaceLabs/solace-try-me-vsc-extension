@@ -49,6 +49,11 @@ const ConfigModal = ({
       onOpenChange={(open) => {
         if (!open) {
           onClose(null);
+          setTitle("");
+          setUrl("");
+          setVpn("");
+          setUsername("");
+          setPassword("");
         }
       }}
     >
@@ -56,7 +61,7 @@ const ConfigModal = ({
         {(onModalClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
-              Modal Title
+              Add Solace Broker Configuration
             </ModalHeader>
             <ModalBody>
               <Input
