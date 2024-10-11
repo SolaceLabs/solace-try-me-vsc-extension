@@ -3,9 +3,13 @@
   "displayName": "Solace Try Me VSC Extension",
   "description": "VSC built-in tool to visualize and observe events flowing through Solace event broker.",
   "version": "0.0.1",
-  "publisher": "Cyrus Mobini",
+  "publisher": "CyrusMobini",
   "engines": {
     "vscode": "^1.93.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SolaceLabs/solace-try-me-vsc-extension"
   },
   "categories": [
     "Other"
