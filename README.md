@@ -1,3 +1,5 @@
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
+
 # Solace Try Me VSC Extension
 
 Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to monitor all messages in your event broker directly from within Visual Studio Code.
@@ -21,6 +23,14 @@ To run this extension locally, follow the instructions in the [DEVELOPMENT.md](D
 ## Known Issues
 
 None, you can report any issues by opening an issue on the GitHub repository.
+
+## Resources
+This is not an officially supported Solace product.
+
+For more information try these resources:
+- Ask the [Solace Community](https://solace.community)
+- The Solace Developer Portal website at: https://solace.dev
+
 
 ## Contributing
 
