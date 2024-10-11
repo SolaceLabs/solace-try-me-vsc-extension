@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import solace from "solclientjs";
 import {
-  Accordion,
-  AccordionItem,
   Button,
   Chip,
   Input,
@@ -19,6 +17,7 @@ import {
   SubscribeConfigs,
   SubscribeStats,
 } from "../Shared/interfaces";
+import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import ConfigStore from "../Shared/components/ConfigStore";
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";

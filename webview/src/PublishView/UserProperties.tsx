@@ -6,8 +6,6 @@ import {
   Input,
   Textarea,
   Button,
-  Accordion,
-  AccordionItem,
   Table,
   TableHeader,
   TableColumn,
@@ -26,6 +24,7 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import solace from "solclientjs";
 
+import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import { UserPropertiesMap } from "../Shared/interfaces";
 import { convertTypeToString } from "../Shared/utils";
 
