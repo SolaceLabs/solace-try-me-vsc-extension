@@ -1,14 +1,13 @@
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Input,
-} from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import { Eye, EyeOff } from "lucide-react";
 
+import {
+  ModalBody,
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "../Shared/components/Modal";
 import { BrokerConfig } from "../Shared/interfaces";
 import { useEffect, useState } from "react";
 

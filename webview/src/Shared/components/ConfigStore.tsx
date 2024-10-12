@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
+import { Button, Tooltip, Select, SelectItem, Input } from "@nextui-org/react";
+import { Save, RefreshCcw, Trash2 } from "lucide-react";
+
 import {
-  Button,
-  Tooltip,
-  Select,
-  SelectItem,
   ModalBody,
-  Input,
   Modal,
   ModalContent,
   ModalFooter,
   ModalHeader,
-} from "@nextui-org/react";
-import { Save, RefreshCcw, Trash2 } from "lucide-react";
+} from "./Modal";
 
 import { deepCompareObjects, getVscConfig, setVscConfig } from "../utils";
 import { Configs } from "../interfaces";
@@ -27,7 +24,7 @@ const ConfigStore = ({
   currentConfig,
   onLoadConfig,
   storeKey,
-  isDisabled=false,
+  isDisabled = false,
 }: ConfigStoreProps) => {
   const [lastSavedConfig, setLastSavedConfig] = useState<Configs>();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);

@@ -13,17 +13,19 @@ import {
   TableRow,
   TableCell,
   Tooltip,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Select,
   SelectItem,
 } from "@nextui-org/react";
 import { Pencil, Trash2 } from "lucide-react";
 import solace from "solclientjs";
 
+import {
+  ModalBody,
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "../Shared/components/Modal";
 import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import { UserPropertiesMap } from "../Shared/interfaces";
 import { convertTypeToString } from "../Shared/utils";
