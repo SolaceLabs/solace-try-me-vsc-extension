@@ -37,7 +37,7 @@ const Main = () => {
   }, []);
 
   return (
-    <main className="text-foreground bg-background w-full h-full p-2">
+    <main className="text-foreground bg-background w-full h-full">
       <Accordion
         selectionMode="multiple"
         defaultExpandedKeys={["config"]}

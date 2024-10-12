@@ -85,7 +85,7 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
   const payload = getContent(message.payload);
 
   return (
-    <Card className="max-w-[400px] mb-3">
+    <Card className="mb-3 mr-3">
       <CardHeader className="flex gap-3 overflow-x-auto">
         <Tooltip content="Open message in VSC">
           <Button

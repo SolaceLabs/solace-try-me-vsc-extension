@@ -18,7 +18,7 @@ export const VSC_CONFIG_DEFAULT: VscConfigInterface = {
   },
 };
 
-export const MAX_DISPLAY_MESSAGES = 20;
+export const MAX_DISPLAY_MESSAGES = 25;
 
 export const MAX_PAYLOAD_LENGTH = 1024;
 
