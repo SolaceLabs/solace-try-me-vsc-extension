@@ -28,6 +28,13 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
           language: message.language ?? "plaintext",
         });
         vscode.window.showTextDocument(document, { preview: true });
+      } else if (message.command === "savePreferences") {
+        this.context.globalState.update("preferences", message.preferences);
+      } else if (message.command === "getPreferences") {
+        webview.postMessage({
+          command: "getPreferences/response",
+          preferences: this.context.globalState.get("preferences", ""),
+        });
       }
     });
 

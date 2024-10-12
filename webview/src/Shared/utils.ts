@@ -4,6 +4,8 @@ import solace from "solclientjs";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
+let runningInBrowser = false;
+
 export const initializeVscConfig = () => {
   try {
     return acquireVsCodeApi();
@@ -11,6 +13,7 @@ export const initializeVscConfig = () => {
     return (function () {
       // For browser testing
       console.info("Using mock vscode API");
+      runningInBrowser = true;
       const lsKey = "vscConfig";
       const vscSimulator: VsCodeApi = {
         getState: () =>
@@ -40,15 +43,38 @@ export function openFileInNewTab(file: string, language = "json") {
 }
 
 export function getVscConfig() {
-  return vscode.getState() || VSC_CONFIG_DEFAULT;
+  if (runningInBrowser) {
+    return Promise.resolve(vscode.getState() || VSC_CONFIG_DEFAULT);
+  }
+  return new Promise<VscConfigInterface>((resolve) => {
+    const listener = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === "getPreferences/response") {
+        window.removeEventListener("message", listener);
+        if (!message.preferences) {
+          resolve(VSC_CONFIG_DEFAULT);
+        }
+        resolve(message.preferences);
+      }
+    };
+    window.addEventListener("message", listener);
+    vscode.postMessage({ command: "getPreferences" });
+  });
 }
 
-export function setVscConfig(
+export async function setVscConfig(
   updateStateCB: (state: VscConfigInterface) => VscConfigInterface
 ) {
-  const currentState = getVscConfig();
+  const currentState = await getVscConfig();
   const newState = updateStateCB(currentState);
-  vscode.setState(newState);
+  if (runningInBrowser) {
+    vscode.setState(newState);
+  } else {
+    vscode.postMessage({
+      command: "savePreferences",
+      preferences: newState,
+    });
+  }
 }
 
 export function compareBrokerConfigs(a: BrokerConfig, b: BrokerConfig) {
@@ -83,7 +109,7 @@ export const deepCompareObjects = (a: unknown, b: unknown): boolean => {
   return true;
 };
 
-export function formatDate(date: Date|number): string {
+export function formatDate(date: Date | number): string {
   if (typeof date === "number") {
     date = new Date(date);
   }
