@@ -46,12 +46,13 @@ const ConfigStore = ({
   }, [currentConfig, lastSavedConfig, selectedConfigName]);
 
   const loadExistingConfigs = useCallback(() => {
-    const state = getVscConfig();
-    if (state && state.recentlyUsed && state.recentlyUsed[storeKey]) {
-      setExistingConfigs(
-        state.recentlyUsed[storeKey] as { name: string; config: Configs }[]
-      );
-    }
+    getVscConfig().then((state) => {
+      if (state && state.recentlyUsed && state.recentlyUsed[storeKey]) {
+        setExistingConfigs(
+          state.recentlyUsed[storeKey] as { name: string; config: Configs }[]
+        );
+      }
+    });
   }, [storeKey]);
 
   useEffect(() => {
@@ -124,6 +125,7 @@ const ConfigStore = ({
               : []
           }
           disabledKeys={["no-item-available"]}
+          onClick={(open) => open && loadExistingConfigs()}
           onSelectionChange={(keys) => {
             const name = Array.from(keys)[0] as string;
             if (!existingConfigs.map((config) => config.name).includes(name)) {

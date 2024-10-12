@@ -13,10 +13,11 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
 
   const fetchBrokers = () => {
     // Fetch brokers from vscode
-    const state = getVscConfig();
-    if (state && state.brokerConfigs) {
-      setBrokers(state.brokerConfigs);
-    }
+    getVscConfig().then((state) => {
+      if (state && state.brokerConfigs) {
+        setBrokers(state.brokerConfigs);
+      }
+    });
   };
 
   useEffect(() => {

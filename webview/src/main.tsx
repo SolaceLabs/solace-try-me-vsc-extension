@@ -13,17 +13,17 @@ const Main = () => {
   );
 
   useEffect(() => {
-    const state = getVscConfig();
-    if (state && state.recentlyUsed && state.recentlyUsed.views) {
-      setTabs(state.recentlyUsed.views);
-    }
+    getVscConfig().then((state) => {
+      if (state && state.recentlyUsed && state.recentlyUsed.views) {
+        setTabs(state.recentlyUsed.views);
+      }
+    });
   }, []);
-
 
   useEffect(() => {
     const listener = (event: MessageEvent) => {
       const message = event.data;
-      if (message.command === "setTheme") {        
+      if (message.command === "setTheme") {
         const theme = message.theme;
         if (document.body.parentElement) {
           document.body.parentElement.className = theme;

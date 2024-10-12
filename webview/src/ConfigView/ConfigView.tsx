@@ -9,7 +9,7 @@ import {
   TableCell,
   Tooltip,
 } from "@nextui-org/react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, RefreshCcw } from "lucide-react";
 
 import { BrokerConfig } from "../Shared/interfaces";
 import { getVscConfig, setVscConfig } from "../Shared/utils";
@@ -23,7 +23,9 @@ const ConfigView = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    setBrokerConfigs(getVscConfig()?.brokerConfigs || []);
+    getVscConfig().then((state) => {
+      setBrokerConfigs(state?.brokerConfigs || []);
+    });
   }, []);
 
   const updateBrokerConfigs = (brokers: BrokerConfig[]) => {
@@ -44,6 +46,18 @@ const ConfigView = () => {
     <div>
       <div className="flex justify-between align-center mb-2">
         <h2>Solace Broker Configurations</h2>
+        <div className="flex gap-2 flex-wrap">
+        <Button
+          size="sm"
+          isIconOnly
+          onClick={() => {
+            getVscConfig().then((state) => {
+              setBrokerConfigs(state?.brokerConfigs || []);
+            });
+          }}
+        >
+          <RefreshCcw size={14} />
+        </Button>
         <Button
           size="sm"
           onClick={() => {
@@ -53,6 +67,7 @@ const ConfigView = () => {
         >
           New Config
         </Button>
+        </div>
       </div>
       <ConfigModal
         show={showModal}
@@ -95,7 +110,8 @@ const ConfigView = () => {
               <TableCell>{broker.username}</TableCell>
               <TableCell className="flex gap-2">
                 <Tooltip content="Edit Broker Config">
-                  <Button isIconOnly
+                  <Button
+                    isIconOnly
                     className="text-default-400 active:opacity-50"
                     variant="light"
                     onClick={() => {
@@ -107,7 +123,8 @@ const ConfigView = () => {
                   </Button>
                 </Tooltip>
                 <Tooltip color="danger" content="Delete Broker Config">
-                  <Button isIconOnly
+                  <Button
+                    isIconOnly
                     className="text-danger active:opacity-50"
                     variant="light"
                     onClick={() => deleteConfig(broker.id)}
