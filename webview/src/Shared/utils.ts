@@ -50,7 +50,6 @@ export function getVscConfig() {
     const listener = (event: MessageEvent) => {
       const message = event.data;
       if (message.command === "getPreferences/response") {
-        console.log(message);
         window.removeEventListener("message", listener);
         if (!message.preferences) {
           resolve(VSC_CONFIG_DEFAULT);
