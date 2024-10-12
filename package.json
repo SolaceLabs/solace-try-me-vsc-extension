@@ -2,7 +2,7 @@
   "name": "solace-try-me-vsc-extension",
   "displayName": "Solace Try Me VSC Extension",
   "description": "VSC built-in tool to visualize and observe events flowing through Solace PubSub+ Broker.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "solace-tools",
   "author": {
     "name": "Cyrus Mobini"
@@ -51,7 +51,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "build:view": "cd webview && npm i && npm run build", 
+    "build:view": "cd webview && npm i && npm run build",
     "build": "npm run build:view && npm run compile",
     "lint": "eslint src",
     "test": "vscode-test"
