@@ -5,12 +5,11 @@ import {
   Input,
   Textarea,
   Button,
-  Accordion,
-  AccordionItem,
   Switch,
   Slider,
 } from "@nextui-org/react";
 
+import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
 import {

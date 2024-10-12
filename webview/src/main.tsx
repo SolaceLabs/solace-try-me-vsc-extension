@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Accordion, AccordionItem } from "@nextui-org/react";
+import { Accordion, AccordionItem } from "./Shared/components/Accordion";
 
 import ConfigView from "./ConfigView/ConfigView";
 import PublishView from "./PublishView/PublishView";

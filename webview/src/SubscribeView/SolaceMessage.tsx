@@ -90,7 +90,24 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
         <Tooltip content="Open message in VSC">
           <Button
             size="sm"
-            onClick={() => openFileInNewTab(JSON.stringify(message, null, 2))}
+            onClick={() => {
+              let parsedPayload = message.payload;
+              try {
+                parsedPayload = JSON.parse(message.payload);
+              } catch {
+                // Payload not JSON - Do nothing
+              }
+              openFileInNewTab(
+                JSON.stringify(
+                  {
+                    ...message,
+                    payload: parsedPayload,
+                  },
+                  null,
+                  2
+                )
+              );
+            }}
           >
             <ExternalLink size={16} />
           </Button>
