@@ -83,7 +83,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  getHtmlForWebview(webview: vscode.Webview): string {
+  private getHtmlForWebview(webview: vscode.Webview): string {
     const uriPrefix = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview-dist")
     );
@@ -110,7 +110,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
     `;
   }
 
-  getTheme() {
+  private getTheme() {
     // Using dark for high contrast and dark themes
     return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light
       ? "light"
@@ -118,7 +118,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
   }
 
   // Method to send the current theme to the webview
-  updateTheme(webview: vscode.Webview) {
+  private updateTheme(webview: vscode.Webview) {
     const theme = this.getTheme();
     // Send a message to the webview to update the theme
     webview.postMessage({ command: "setTheme", theme });
