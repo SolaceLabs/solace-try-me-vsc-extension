@@ -2,7 +2,10 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
-## [0.0.3] - 2024-11-12
+## [0.0.4] - 2024-10-15
+- Added support to open multiple SolaceTryMe Tabs in new windows
+
+## [0.0.3] - 2024-10-12
 - Added support for config sync across multiple windows
 
 ## [0.0.2] - 2024-10-11
