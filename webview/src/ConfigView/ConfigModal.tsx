@@ -79,7 +79,7 @@ const ConfigModal = ({
               />
               <Input
                 type="text"
-                label="VPN"
+                label="Message VPN"
                 value={vpn}
                 onValueChange={setVpn}
                 isRequired

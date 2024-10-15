@@ -40,11 +40,27 @@
       "solaceTryMeVscExtension": [
         {
           "id": "solaceTryMeVscExtension.sideView",
-          "name": "Solace TryMe",
+          "name": "",
           "type": "webview"
         }
       ]
-    }
+    },
+    "commands": [
+			{
+				"command": "solaceTryMeVscExtension.newWindow",
+				"title": "Open Solace Try Me in a new window",
+				"icon": "$(empty-window)"
+			}
+		],
+    "menus": {
+			"view/title": [
+				{
+					"command": "solaceTryMeVscExtension.newWindow",
+					"group": "navigation",
+          "when": "view == solaceTryMeVscExtension.sideView"
+				}
+			]
+		}
   },
   "scripts": {
     "vscode:prepublish": "npm run build",

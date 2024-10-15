@@ -98,7 +98,7 @@ const ConfigView = () => {
       >
         <TableHeader>
           <TableColumn>Title</TableColumn>
-          <TableColumn>VPN</TableColumn>
+          <TableColumn>Message VPN</TableColumn>
           <TableColumn>User</TableColumn>
           <TableColumn>Actions</TableColumn>
         </TableHeader>

@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 
+const openTabs = new Set();
+
 export function activate(context: vscode.ExtensionContext) {
   // Register the webview view provider
   context.subscriptions.push(
@@ -13,12 +15,38 @@ export function activate(context: vscode.ExtensionContext) {
       }
     )
   );
+
+  // Register solaceTryMeVscExtension.newWindow command to open the webview in a new window
+  context.subscriptions.push(
+    vscode.commands.registerCommand("solaceTryMeVscExtension.newWindow", () => {
+      let tabNumber = 1;
+      while (openTabs.has(tabNumber)) {
+        tabNumber++;
+      }
+      openTabs.add(tabNumber);
+
+      const panel = vscode.window.createWebviewPanel(
+        "solaceTryMeVscExtension.newWindow",
+        `Solace Try Me - Tab ${tabNumber}`,
+        vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+        }
+      );
+      const provider = new SolaceTryMeViewProvider(context);
+      provider.resolveWebviewView(panel);
+      panel.onDidDispose(() => {
+        openTabs.delete(tabNumber);
+      });
+    })
+  );
 }
 
 class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
-  resolveWebviewView(webviewView: vscode.WebviewView) {
+  resolveWebviewView(webviewView: vscode.WebviewView| vscode.WebviewPanel) {
     const { webview } = webviewView;
 
     webview.onDidReceiveMessage(async (message) => {
@@ -55,7 +83,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  private getHtmlForWebview(webview: vscode.Webview): string {
+  getHtmlForWebview(webview: vscode.Webview): string {
     const uriPrefix = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview-dist")
     );
@@ -82,7 +110,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
     `;
   }
 
-  private getTheme() {
+  getTheme() {
     // Using dark for high contrast and dark themes
     return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light
       ? "light"
@@ -90,7 +118,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
   }
 
   // Method to send the current theme to the webview
-  private updateTheme(webview: vscode.Webview) {
+  updateTheme(webview: vscode.Webview) {
     const theme = this.getTheme();
     // Send a message to the webview to update the theme
     webview.postMessage({ command: "setTheme", theme });
