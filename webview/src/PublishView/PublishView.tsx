@@ -273,7 +273,7 @@ const PublishView = () => {
             </div>
           </AccordionItem>
         </Accordion>
-        <Button
+        <Button radius="sm"
           color="success"
           isDisabled={disablePublish}
           onClick={() => {
@@ -316,7 +316,7 @@ const PublishView = () => {
           </div>
         </div>
         <div className="fle flex-wrap justify-between items-end gap-1 mt-3">
-          <Button
+          <Button radius="sm"
             size="sm"
             variant="bordered"
             startContent={<Trash2 size={12} />}
@@ -326,7 +326,7 @@ const PublishView = () => {
           >
             Clear Stats
           </Button>
-          <Button
+          <Button radius="sm"
             size="sm"
             variant="bordered"
             startContent={<Delete size={12} />}

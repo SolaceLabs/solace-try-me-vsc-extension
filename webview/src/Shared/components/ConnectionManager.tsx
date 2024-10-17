@@ -114,7 +114,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
     <div>
       <div className="flex gap-4 items-center justify-between flex-wrap">
         <BrokerSelect onBrokerSelect={setCurrentBroker} />
-        <Button {...buttonProps} />
+        <Button radius="sm" {...buttonProps} />
       </div>
       {connectionError && <ErrorMessage>{connectionError}</ErrorMessage>}
     </div>

@@ -165,7 +165,7 @@ const SubscribeView = () => {
           isDisabled={!solaceConnection}
           onValueChange={setTopicInputField}
         />
-        <Button
+        <Button radius="sm"
           color="primary"
           onPress={() => {
             if (topicInputField.trim()) {
@@ -252,7 +252,7 @@ const SubscribeView = () => {
                   isDisabled={!solaceConnection}
                 />
               )}
-              <Button
+              <Button radius="sm"
                 color="primary"
                 variant={queueConsumer ? "bordered" : "solid"}
                 onPress={() => {
@@ -282,14 +282,14 @@ const SubscribeView = () => {
         <div className="flex justify-between pb-3 mb-3 flex-wrap">
           <div className="flex-grow flex flex-col justify-between h-auto">
             <h2>Messages (Most Recent {MAX_DISPLAY_MESSAGES})</h2>
-            <div className="flex gap-2 align-center flex-wrap">
+            <div className="flex gap-2 align-center flex-wrap mb-2">
               <small>Direct: {stats.direct}</small>
               <small>Persistent: {stats.persistent}</small>
               <small>Non-Persistent: {stats.nonPersistent}</small>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Button
+            <Button radius="sm"
               size="sm"
               variant="bordered"
               className="w-full"
@@ -300,7 +300,7 @@ const SubscribeView = () => {
             >
               Clear Messages
             </Button>
-            <Button
+            <Button radius="sm"
               size="sm"
               variant="bordered"
               className="w-full"

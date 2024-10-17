@@ -153,7 +153,7 @@ const UserProperties = ({
         subtitle="User Properties"
       >
         <div className="flex flex-col gap-4 pl-2">
-          <Button
+          <Button radius="sm"
             size="sm"
             isDisabled={disablePage}
             onClick={() => {
@@ -260,7 +260,7 @@ const UserProperties = ({
                     )}
                   </ModalBody>
                   <ModalFooter>
-                    <Button
+                    <Button radius="sm"
                       color="danger"
                       variant="light"
                       onPress={() => {
@@ -269,7 +269,7 @@ const UserProperties = ({
                     >
                       Close
                     </Button>
-                    <Button
+                    <Button radius="sm"
                       color="primary"
                       isDisabled={disabledCreateButton}
                       onPress={() => {
@@ -328,7 +328,7 @@ const UserProperties = ({
                   </TableCell>
                   <TableCell className="flex gap-2">
                     <Tooltip content="Edit Broker Config">
-                      <Button
+                      <Button radius="sm"
                         isIconOnly
                         className="text-default-400 active:opacity-50"
                         isDisabled={disablePage}
@@ -343,7 +343,7 @@ const UserProperties = ({
                       </Button>
                     </Tooltip>
                     <Tooltip color="danger" content="Delete Broker Config">
-                      <Button
+                      <Button radius="sm"
                         isIconOnly
                         isDisabled={disablePage}
                         size="sm"
