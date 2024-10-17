@@ -15,8 +15,10 @@ import { BrokerConfig } from "../Shared/interfaces";
 import { getVscConfig, setVscConfig } from "../Shared/utils";
 import ConfigModal from "./ConfigModal";
 import SettingsView from "./SettingsView";
+import { useSettings } from "../Shared/components/SettingsContext";
 
 const ConfigView = () => {
+  const { setSettings } = useSettings();
   const [brokerConfigs, setBrokerConfigs] = useState<BrokerConfig[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<BrokerConfig | null>(
     null
@@ -49,9 +51,40 @@ const ConfigView = () => {
       <div className="flex justify-between align-center mb-2">
         <h2>Solace Broker Configurations</h2>
         <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 justify-between w-full">
+            <Tooltip content="Sync Configurations">
+              <Button
+                radius="sm"
+                size="sm"
+                isIconOnly
+                className="w-full"
+                onClick={() => {
+                  getVscConfig().then((state) => {
+                    if (state?.brokerConfigs)
+                      setBrokerConfigs(state.brokerConfigs);
+                    if (state?.settings) setSettings(state.settings);
+                  });
+                }}
+              >
+                <RefreshCcw size={14} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Extension Settings">
+              <Button
+                radius="sm"
+                size="sm"
+                isIconOnly
+                className="w-full"
+                onClick={() => setShowSettingsModal(true)}
+              >
+                <Settings size={14} />
+              </Button>
+            </Tooltip>
+          </div>
           <Button
             radius="sm"
             size="sm"
+            className="w-full"
             onClick={() => {
               setSelectedConfig(null);
               setShowBrokerModal(true);
@@ -59,33 +92,12 @@ const ConfigView = () => {
           >
             New Config
           </Button>
-          <Tooltip content="Sync Configurations">
-            <Button
-              radius="sm"
-              size="sm"
-              isIconOnly
-              onClick={() => {
-                getVscConfig().then((state) => {
-                  setBrokerConfigs(state?.brokerConfigs || []);
-                });
-              }}
-            >
-              <RefreshCcw size={14} />
-            </Button>
-          </Tooltip>
-          <Tooltip content="Extension Settings">
-            <Button
-              radius="sm"
-              size="sm"
-              isIconOnly
-              onClick={() => setShowSettingsModal(true)}
-            >
-              <Settings size={14} />
-            </Button>
-          </Tooltip>
         </div>
       </div>
-      <SettingsView show={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SettingsView
+        show={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
       <ConfigModal
         show={showBrokerModal}
         initialConfig={selectedConfig}

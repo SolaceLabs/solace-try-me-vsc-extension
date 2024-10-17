@@ -48,13 +48,13 @@ const SettingsView = ({
       <ModalContent>
         {(onModalClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
+            <ModalHeader>
               Solace Try Me Extension Settings
             </ModalHeader>
-            <ModalBody>
+            <ModalBody className="flex flex-col gap-4">
               <Input
                 type="number"
-                label="Maximum Number of Visible Messages"
+                label="Maximum number of visible messages"
                 value={maxDisplayMessages.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -68,7 +68,7 @@ const SettingsView = ({
               />
               <Input
                 type="number"
-                label="Maximum Visible Payload Length"
+                label="Maximum visible payload length"
                 value={maxPayloadLength.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -81,7 +81,7 @@ const SettingsView = ({
               />
               <Input
                 type="number"
-                label="Maximum Visible Property Length"
+                label="Maximum visible property length"
                 value={maxPropertyLength.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -94,16 +94,17 @@ const SettingsView = ({
               />
               <Input
                 type="number"
-                label="Broker Disconnect Timeout"
-                value={brokerDisconnectTimeout.toString()}
+                className="no-wrap"
+                label="Automatic broker disconnection after inactivity (minutes) "
+                value={(brokerDisconnectTimeout / 1000 / 60).toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
                     ...prev,
-                    brokerDisconnectTimeout: getInteger(e.target.value, 60),
+                    brokerDisconnectTimeout: getInteger(e.target.value, 1) * 1000 * 60,
                   }))
                 }
-                min={60}
-                step={10}
+                min={1}
+                step={1}
               />
             </ModalBody>
             <ModalFooter>

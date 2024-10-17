@@ -59,10 +59,10 @@ const ConfigModal = ({
       <ModalContent>
         {(onModalClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
+            <ModalHeader>
               Add Solace Broker Configuration
             </ModalHeader>
-            <ModalBody>
+            <ModalBody className="flex flex-col gap-4">
               <Input
                 type="text"
                 label="Title"

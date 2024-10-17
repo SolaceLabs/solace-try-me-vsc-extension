@@ -1,7 +1,7 @@
 import { ExtSettings, VscConfigInterface } from "./interfaces";
 
 // ** Not exported
-const MAX_DISPLAY_MESSAGES = 25;
+const MAX_DISPLAY_MESSAGES = 20;
 const MAX_PAYLOAD_LENGTH = 1024;
 const MAX_PROPERTY_LENGTH = 128;
 const BROKER_DISCONNECT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
