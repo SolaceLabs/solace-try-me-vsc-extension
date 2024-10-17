@@ -9,18 +9,22 @@ import {
   TableCell,
   Tooltip,
 } from "@nextui-org/react";
-import { Pencil, Trash2, RefreshCcw } from "lucide-react";
+import { Pencil, Trash2, RefreshCcw, Settings } from "lucide-react";
 
 import { BrokerConfig } from "../Shared/interfaces";
 import { getVscConfig, setVscConfig } from "../Shared/utils";
 import ConfigModal from "./ConfigModal";
+import SettingsView from "./SettingsView";
+import { useSettings } from "../Shared/components/SettingsContext";
 
 const ConfigView = () => {
+  const { setSettings } = useSettings();
   const [brokerConfigs, setBrokerConfigs] = useState<BrokerConfig[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<BrokerConfig | null>(
     null
   );
-  const [showModal, setShowModal] = useState(false);
+  const [showBrokerModal, setShowBrokerModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   useEffect(() => {
     getVscConfig().then((state) => {
@@ -47,30 +51,55 @@ const ConfigView = () => {
       <div className="flex justify-between align-center mb-2">
         <h2>Solace Broker Configurations</h2>
         <div className="flex gap-2 flex-wrap">
-        <Button radius="sm"
-          size="sm"
-          isIconOnly
-          onClick={() => {
-            getVscConfig().then((state) => {
-              setBrokerConfigs(state?.brokerConfigs || []);
-            });
-          }}
-        >
-          <RefreshCcw size={14} />
-        </Button>
-        <Button radius="sm"
-          size="sm"
-          onClick={() => {
-            setSelectedConfig(null);
-            setShowModal(true);
-          }}
-        >
-          New Config
-        </Button>
+          <div className="flex gap-2 justify-between w-full">
+            <Tooltip content="Sync Configurations">
+              <Button
+                radius="sm"
+                size="sm"
+                isIconOnly
+                className="w-full"
+                onClick={() => {
+                  getVscConfig().then((state) => {
+                    if (state?.brokerConfigs)
+                      setBrokerConfigs(state.brokerConfigs);
+                    if (state?.settings) setSettings(state.settings);
+                  });
+                }}
+              >
+                <RefreshCcw size={14} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Extension Settings">
+              <Button
+                radius="sm"
+                size="sm"
+                isIconOnly
+                className="w-full"
+                onClick={() => setShowSettingsModal(true)}
+              >
+                <Settings size={14} />
+              </Button>
+            </Tooltip>
+          </div>
+          <Button
+            radius="sm"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              setSelectedConfig(null);
+              setShowBrokerModal(true);
+            }}
+          >
+            New Config
+          </Button>
         </div>
       </div>
+      <SettingsView
+        show={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
       <ConfigModal
-        show={showModal}
+        show={showBrokerModal}
         initialConfig={selectedConfig}
         onClose={(newConfig) => {
           if (newConfig) {
@@ -85,7 +114,7 @@ const ConfigView = () => {
             }
           }
           setSelectedConfig(null);
-          setShowModal(false);
+          setShowBrokerModal(false);
         }}
       />
       <Table
@@ -110,20 +139,22 @@ const ConfigView = () => {
               <TableCell>{broker.username}</TableCell>
               <TableCell className="flex gap-2">
                 <Tooltip content="Edit Broker Config">
-                  <Button radius="sm"
+                  <Button
+                    radius="sm"
                     isIconOnly
                     className="text-default-400 active:opacity-50"
                     variant="light"
                     onClick={() => {
                       setSelectedConfig(broker);
-                      setShowModal(true);
+                      setShowBrokerModal(true);
                     }}
                   >
                     <Pencil />
                   </Button>
                 </Tooltip>
                 <Tooltip color="danger" content="Delete Broker Config">
-                  <Button radius="sm"
+                  <Button
+                    radius="sm"
                     isIconOnly
                     className="text-danger active:opacity-50"
                     variant="light"

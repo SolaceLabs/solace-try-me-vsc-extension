@@ -2,7 +2,7 @@
   "name": "solace-try-me-vsc-extension",
   "displayName": "Solace Try Me VSC Extension",
   "description": "VSC built-in tool to visualize and observe events flowing through Solace PubSub+ Broker.",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "solace-tools",
   "author": {
     "name": "Cyrus Mobini"
