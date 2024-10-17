@@ -47,7 +47,7 @@ const ConfigView = () => {
       <div className="flex justify-between align-center mb-2">
         <h2>Solace Broker Configurations</h2>
         <div className="flex gap-2 flex-wrap">
-        <Button
+        <Button radius="sm"
           size="sm"
           isIconOnly
           onClick={() => {
@@ -58,7 +58,7 @@ const ConfigView = () => {
         >
           <RefreshCcw size={14} />
         </Button>
-        <Button
+        <Button radius="sm"
           size="sm"
           onClick={() => {
             setSelectedConfig(null);
@@ -110,7 +110,7 @@ const ConfigView = () => {
               <TableCell>{broker.username}</TableCell>
               <TableCell className="flex gap-2">
                 <Tooltip content="Edit Broker Config">
-                  <Button
+                  <Button radius="sm"
                     isIconOnly
                     className="text-default-400 active:opacity-50"
                     variant="light"
@@ -123,7 +123,7 @@ const ConfigView = () => {
                   </Button>
                 </Tooltip>
                 <Tooltip color="danger" content="Delete Broker Config">
-                  <Button
+                  <Button radius="sm"
                     isIconOnly
                     className="text-danger active:opacity-50"
                     variant="light"

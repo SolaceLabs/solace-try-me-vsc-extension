@@ -113,10 +113,10 @@ const ConfigModal = ({
               />
             </ModalBody>
             <ModalFooter>
-              <Button color="danger" variant="light" onPress={onModalClose}>
+              <Button radius="sm" color="danger" variant="light" onPress={onModalClose}>
                 Close
               </Button>
-              <Button
+              <Button radius="sm"
                 color="primary"
                 isDisabled={disableSave}
                 onPress={() => {

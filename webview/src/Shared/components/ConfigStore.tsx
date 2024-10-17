@@ -148,7 +148,7 @@ const ConfigStore = ({
               <SelectItem
                 key={config.name}
                 endContent={
-                  <Button
+                  <Button radius="sm"
                     variant="flat"
                     color="danger"
                     size="sm"
@@ -174,7 +174,7 @@ const ConfigStore = ({
         </Select>
         <div className="flex items-center gap-2">
           <Tooltip content="Save configuration as new entry">
-            <Button
+            <Button radius="sm"
               variant="bordered"
               className="capitalize"
               onClick={() => setShowNameModal(true)}
@@ -187,7 +187,7 @@ const ConfigStore = ({
 
           {hasUnsavedChanges && (
             <Tooltip content={`Save changes to ${selectedConfigName}`}>
-              <Button
+              <Button radius="sm"
                 variant="bordered"
                 className="capitalize"
                 size="sm"
@@ -223,10 +223,10 @@ const ConfigStore = ({
                 />
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="flat" onPress={onClose}>
+                <Button radius="sm" color="danger" variant="flat" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button
+                <Button radius="sm"
                   color="primary"
                   onPress={() => {
                     onClose();

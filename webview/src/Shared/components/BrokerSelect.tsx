@@ -34,10 +34,11 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
     <Select
       label="Solace Broker Config"
       placeholder="Select a broker"
-      className="w-auto flex-grow min-w-40"
+      className="w-auto flex-grow min-w-52"
       onClick={(open) => open && fetchBrokers()}
       disabledKeys={["no-item-available"]}
       isRequired
+      selectedKeys={currentBroker ? [currentBroker.id] : []}
       onSelectionChange={(selection) => {
         const values = Array.from(selection);
         if (values.length > 0) {

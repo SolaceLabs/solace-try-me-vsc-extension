@@ -15,10 +15,11 @@ import {
 } from "../Shared/utils";
 import { ExternalLink } from "lucide-react";
 import { MessageDeliveryModeType } from "solclientjs";
-import { MAX_PAYLOAD_LENGTH, MAX_PROPERTY_LENGTH } from "../Shared/constants";
 
 interface SolaceMessageProps {
   message: Message;
+  maxPayloadLength: number;
+  maxPropertyLength: number;
 }
 
 const keyNameMap: { [k: string]: string } = {
@@ -56,7 +57,7 @@ const transformMetaItem = ([key, value]: [string, unknown]) => {
   return [newKey, newValue];
 };
 
-const getContent = (content: string, maxLength = MAX_PAYLOAD_LENGTH) => {
+const getContent = (content: string, maxLength: number) => {
   return content.length > maxLength ? (
     <>
       {content.slice(0, maxLength)}
@@ -71,7 +72,7 @@ const getContent = (content: string, maxLength = MAX_PAYLOAD_LENGTH) => {
   );
 };
 
-const SolaceMessage = ({ message }: SolaceMessageProps) => {
+const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceMessageProps) => {
   const dataStr = formatDate(
     message.metadata.senderTimestamp ?? message.metadata.receiverTimestamp
   );
@@ -82,13 +83,13 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
 
   const userProperties = Object.entries(message.userProperties);
 
-  const payload = getContent(message.payload);
+  const payload = getContent(message.payload, maxPayloadLength);
 
   return (
     <Card className="mb-3 mr-3">
       <CardHeader className="flex gap-3 overflow-x-auto">
         <Tooltip content="Open message in VSC">
-          <Button
+          <Button radius="sm"
             size="sm"
             onClick={() => {
               let parsedPayload = message.payload;
@@ -127,7 +128,7 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
             <div key={key} className="flex gap-2">
               <p className="text-sm capitalize">{key}</p>
               <p className="text-sm text-default-500">
-                {getContent(value, MAX_PROPERTY_LENGTH)}
+                {getContent(value, maxPropertyLength)}
               </p>
             </div>
           ))}
@@ -147,7 +148,7 @@ const SolaceMessage = ({ message }: SolaceMessageProps) => {
                 <p className="text-sm text-default-500">
                   {getContent(
                     String((value as { value: string }).value),
-                    MAX_PROPERTY_LENGTH
+                    maxPropertyLength
                   )}
                 </p>
               </div>

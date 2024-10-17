@@ -8,3 +8,22 @@ body {
   margin: 0;
   padding: 0;
 }
+
+:root {
+  background-color:  var(--vscode-panel-background);
+}
+
+.vscode-dark,
+.vscode-light {
+  --nextui-background: var(--vscode-panel-background);
+  --nextui-background-secondary: var(--vscode-editor-background);
+  --nextui-foreground: var(--vscode-panel-foreground);
+  --nextui-foreground-secondary: var(--vscode-editor-foreground);
+}
+
+
+body.vscode-dark, body.vscode-light {
+  background-color: var(--nextui-background);
+  color: var(--nextui-foreground);
+  font-family: var(--vscode-editor-font-family);
+}
