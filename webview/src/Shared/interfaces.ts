@@ -11,8 +11,16 @@ export interface BrokerConfig {
 
 export type Views = "config" | "subscribe" | "publish";
 
+export interface ExtSettings {
+  maxDisplayMessages: number;
+  maxPayloadLength: number;
+  maxPropertyLength: number;
+  brokerDisconnectTimeout: number;
+}
+
 export interface VscConfigInterface {
   brokerConfigs: BrokerConfig[];
+  settings: ExtSettings;
   recentlyUsed: {
     views: Views[];
     subscribeConfig: { name: string; config: SubscribeConfigs }[];

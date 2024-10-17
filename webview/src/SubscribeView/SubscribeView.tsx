@@ -26,7 +26,7 @@ import ErrorMessage from "../Shared/components/ErrorMessage";
 import { useSettings } from "../Shared/components/SettingsContext";
 
 const SubscribeView = () => {
-  const {settings} = useSettings();
+  const { settings } = useSettings();
 
   const [solaceConnection, setSolaceConnection] =
     useState<SolaceManager | null>(null);
@@ -52,15 +52,19 @@ const SubscribeView = () => {
   });
 
   useEffect(() => {
-    setTopics([]);
     if (solaceConnection) {
       solaceConnection.onMessage = (message: Message) => {
         addMessage(message, settings.maxDisplayMessages);
       };
+      for (const topic of topics) {
+        solaceConnection.subscribe(topic);
+      }
     }
+    // Topics should not trigger this effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.maxDisplayMessages, solaceConnection]);
 
-  const addMessage = (message: Message, maxDisplayMessages:number) => {
+  const addMessage = (message: Message, maxDisplayMessages: number) => {
     setStats((prevStats) => {
       const newStats = { ...prevStats };
       switch (message.metadata.deliveryMode) {
@@ -167,7 +171,8 @@ const SubscribeView = () => {
           isDisabled={!solaceConnection}
           onValueChange={setTopicInputField}
         />
-        <Button radius="sm"
+        <Button
+          radius="sm"
           color="primary"
           onPress={() => {
             if (topicInputField.trim()) {
@@ -254,7 +259,8 @@ const SubscribeView = () => {
                   isDisabled={!solaceConnection}
                 />
               )}
-              <Button radius="sm"
+              <Button
+                radius="sm"
                 color="primary"
                 variant={queueConsumer ? "bordered" : "solid"}
                 onPress={() => {
@@ -291,7 +297,8 @@ const SubscribeView = () => {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <Button radius="sm"
+            <Button
+              radius="sm"
               size="sm"
               variant="bordered"
               className="w-full"
@@ -302,7 +309,8 @@ const SubscribeView = () => {
             >
               Clear Messages
             </Button>
-            <Button radius="sm"
+            <Button
+              radius="sm"
               size="sm"
               variant="bordered"
               className="w-full"
@@ -318,7 +326,12 @@ const SubscribeView = () => {
         {messages.length !== 0 && (
           <ScrollShadow className="h-[500px] w-full">
             {messages.map((message) => (
-              <SolaceMessage key={message._extension_uid} message={message} maxPayloadLength={settings.maxPayloadLength} maxPropertyLength={settings.maxPropertyLength} />
+              <SolaceMessage
+                key={message._extension_uid}
+                message={message}
+                maxPayloadLength={settings.maxPayloadLength}
+                maxPropertyLength={settings.maxPropertyLength}
+              />
             ))}
           </ScrollShadow>
         )}

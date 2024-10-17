@@ -1,38 +1,47 @@
-import React,  { ReactNode, useContext, useState } from "react";
-import { BROKER_DISCONNECT_TIMEOUT, MAX_DISPLAY_MESSAGES, MAX_PAYLOAD_LENGTH, MAX_PROPERTY_LENGTH } from "../constants";
+/* eslint-disable react-refresh/only-export-components */
+import React, { ReactNode, useContext, useEffect, useState } from "react";
+import { DEFAULT_SETTINGS } from "../constants";
+import { getVscConfig, setVscConfig } from "../utils";
+import { ExtSettings } from "../interfaces";
 
+const SettingsContext = React.createContext<{
+  settings: ExtSettings;
+  setSettings: React.Dispatch<React.SetStateAction<ExtSettings>>;
+}>({
+  settings: DEFAULT_SETTINGS,
+  setSettings: () => {},
+});
 
-const defaultSettings = {
-    maxDisplayMessages: MAX_DISPLAY_MESSAGES,
-    maxPayloadLength: MAX_PAYLOAD_LENGTH,
-    maxPropertyLength: MAX_PROPERTY_LENGTH,
-    brokerDisconnectTimeout: BROKER_DISCONNECT_TIMEOUT,
-}
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
+  const [settings, setSettings] = useState<ExtSettings>(DEFAULT_SETTINGS);
 
-const SettingsContext = React.createContext({
-  settings: defaultSettings,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setSettings: (_settings: typeof defaultSettings) => {}
-})
+  useEffect(() => {
+    getVscConfig().then((state) => {
+      if (state && state.settings) {
+        setSettings(state.settings);
+      }
+    });
+  }, []);
 
-const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<typeof defaultSettings>(defaultSettings)
+  useEffect(() => {
+    setVscConfig((state) => {
+      const newState = { ...state };
+      newState.settings = settings;
+      return newState;
+    });
+  }, [settings]);
 
   return (
     <SettingsContext.Provider value={{ settings, setSettings }}>
       {children}
     </SettingsContext.Provider>
-  )
-}
+  );
+};
 
-const useSettings = () => {
-    const context = useContext(SettingsContext)
-    if (context === undefined) {
-        throw new Error("useSettings must be used within a SettingsProvider")
-    }
-    return context
-    }
-
-
-// eslint-disable-next-line react-refresh/only-export-components
-export { SettingsProvider, useSettings }
+export const useSettings = () => {
+  const context = useContext(SettingsContext);
+  if (context === undefined) {
+    throw new Error("useSettings must be used within a SettingsProvider");
+  }
+  return context;
+};
