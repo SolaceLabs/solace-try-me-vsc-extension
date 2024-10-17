@@ -18,18 +18,25 @@ class SolaceManager {
   isConnected = false;
   onMessage!: onMessageCallback;
   brokerConfig!: BrokerConfig;
+  inactivityTimeout: NodeJS.Timeout | null = null;
   onConnectionStateChange!: (
     isConnected: boolean,
     error: string | null
   ) => void;
 
-  constructor(config?: BrokerConfig) {
-    if (config) {
-      this.brokerConfig = config;
-    }
+  constructor(config: BrokerConfig, private brokerDisconnectTimeout: number) {
+    this.brokerConfig = config;
+  }
+
+  resetInactivityTimeout() {
+    if (this.inactivityTimeout) clearTimeout(this.inactivityTimeout);
+    this.inactivityTimeout = setTimeout(() => {
+      this.disconnect();
+    }, this.brokerDisconnectTimeout);
   }
 
   handleMessage(message: solace.Message) {
+    this.resetInactivityTimeout();
     const destination = message.getDestination();
     const topic = destination ? destination.getName() : "unknown";
     const payload = message.getBinaryAttachment()?.toString() ?? "";
@@ -54,7 +61,7 @@ class SolaceManager {
         userProperties[key] = {
           type: field.getType(),
           value: field.getValue(),
-        }
+        };
       });
     }
     const uid = Math.random().toString(36).substring(7) + Date.now();
@@ -90,6 +97,7 @@ class SolaceManager {
       // Define session event listeners
       this.session.on(solace.SessionEventCode.UP_NOTICE, () => {
         this.isConnected = true;
+        this.resetInactivityTimeout();
         console.debug("Solace session connected");
         if (this.onConnectionStateChange) {
           this.onConnectionStateChange(this.isConnected, null);
@@ -244,6 +252,7 @@ class SolaceManager {
       if (!this.session) {
         throw new Error("Session not initialized");
       }
+      this.resetInactivityTimeout();
       const message = SolclientFactory.createMessage();
       if (options.destinationType !== undefined) {
         if (options.destinationType === solace.DestinationType.QUEUE) {
@@ -305,6 +314,12 @@ class SolaceManager {
       this.session.disconnect();
       this.isConnected = false;
       this.session = undefined;
+      if (this.onConnectionStateChange) {
+        this.onConnectionStateChange(this.isConnected, null);
+      }
+      if (this.inactivityTimeout) {
+        clearTimeout(this.inactivityTimeout);
+      }
     }
   }
 }

@@ -24,3 +24,4 @@ export const MAX_PAYLOAD_LENGTH = 1024;
 
 export const MAX_PROPERTY_LENGTH = 128;
 
+export const BROKER_DISCONNECT_TIMEOUT = 30 * 60 * 1000; // 30 minutes

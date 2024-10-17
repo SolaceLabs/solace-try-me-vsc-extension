@@ -3,9 +3,10 @@ import BrokerSelect from "./BrokerSelect";
 import { BrokerConfig } from "../interfaces";
 import SolaceManager from "../SolaceManager";
 import { compareBrokerConfigs } from "../utils";
-import { Button } from "@nextui-org/react";
+import { Button, Spinner } from "@nextui-org/react";
 import { Link2, Link2Off } from "lucide-react";
 import ErrorMessage from "./ErrorMessage";
+import { useSettings } from "./SettingsContext";
 
 interface ConnectionManagerProps {
   onSetConnection: (connection: SolaceManager | null) => void;
@@ -18,6 +19,7 @@ enum ConnectionState {
 }
 
 const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
+  const { settings } = useSettings();
   const [currentBroker, setCurrentBroker] = useState<BrokerConfig | null>(null);
   const [connectionState, setConnectionState] = useState(
     ConnectionState.DISCONNECTED
@@ -36,7 +38,10 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
         }
         solaceConnection.disconnect();
       }
-      const solace = new SolaceManager(currentBroker);
+      const solace = new SolaceManager(
+        currentBroker,
+        settings.brokerDisconnectTimeout
+      );
       setConnectionState(ConnectionState.DISCONNECTED);
 
       solace.onConnectionStateChange = (
@@ -52,7 +57,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
       };
       setSolaceConnection(solace);
     }
-  }, [currentBroker, solaceConnection]);
+  }, [currentBroker, settings.brokerDisconnectTimeout, solaceConnection]);
 
   useEffect(() => {
     if (solaceConnection) {
@@ -71,7 +76,10 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
   }, [solaceConnection]);
 
   const onToggleConnection = () => {
-    if (connectionState === ConnectionState.CONNECTED) {
+    if (
+      connectionState === ConnectionState.CONNECTED ||
+      connectionState === ConnectionState.CONNECTING
+    ) {
       solaceConnection?.disconnect();
     } else {
       if (currentBroker) {
@@ -100,9 +108,8 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
       buttonProps.children = "Disconnect";
       break;
     case ConnectionState.CONNECTING:
-      buttonProps.isLoading = true;
       buttonProps.children = "Connecting";
-      buttonProps.isDisabled = true;
+      buttonProps.startContent = <Spinner color="current" size="sm" />
       break;
     default:
       buttonProps.startContent = <Link2Off size={24} />;

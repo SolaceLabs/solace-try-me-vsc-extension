@@ -4,12 +4,15 @@ import { NextUIProvider } from "@nextui-org/react";
 
 import Main from "./main";
 import "./index.css";
+import { SettingsProvider } from "./Shared/components/SettingsContext";
 
 const root = document.getElementById("root");
 createRoot(root!).render(
   <StrictMode>
     <NextUIProvider>
-      <Main />
+      <SettingsProvider>
+        <Main />
+      </SettingsProvider>
     </NextUIProvider>
   </StrictMode>
 );

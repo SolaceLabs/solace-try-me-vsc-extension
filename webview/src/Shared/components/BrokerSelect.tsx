@@ -38,6 +38,7 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
       onClick={(open) => open && fetchBrokers()}
       disabledKeys={["no-item-available"]}
       isRequired
+      selectedKeys={currentBroker ? [currentBroker.id] : []}
       onSelectionChange={(selection) => {
         const values = Array.from(selection);
         if (values.length > 0) {

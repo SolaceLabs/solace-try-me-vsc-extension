@@ -21,11 +21,13 @@ import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import ConfigStore from "../Shared/components/ConfigStore";
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
-import { MAX_DISPLAY_MESSAGES } from "../Shared/constants";
 import SolaceMessage from "./SolaceMessage";
 import ErrorMessage from "../Shared/components/ErrorMessage";
+import { useSettings } from "../Shared/components/SettingsContext";
 
 const SubscribeView = () => {
+  const {settings} = useSettings();
+
   const [solaceConnection, setSolaceConnection] =
     useState<SolaceManager | null>(null);
 
@@ -53,12 +55,12 @@ const SubscribeView = () => {
     setTopics([]);
     if (solaceConnection) {
       solaceConnection.onMessage = (message: Message) => {
-        addMessage(message);
+        addMessage(message, settings.maxDisplayMessages);
       };
     }
-  }, [solaceConnection]);
+  }, [settings.maxDisplayMessages, solaceConnection]);
 
-  const addMessage = (message: Message) => {
+  const addMessage = (message: Message, maxDisplayMessages:number) => {
     setStats((prevStats) => {
       const newStats = { ...prevStats };
       switch (message.metadata.deliveryMode) {
@@ -76,7 +78,7 @@ const SubscribeView = () => {
     });
 
     setMessages((prevMessages) => {
-      if (prevMessages.length >= MAX_DISPLAY_MESSAGES) {
+      if (prevMessages.length >= maxDisplayMessages) {
         prevMessages.pop();
       }
       return [message, ...prevMessages];
@@ -281,7 +283,7 @@ const SubscribeView = () => {
       <div>
         <div className="flex justify-between pb-3 mb-3 flex-wrap">
           <div className="flex-grow flex flex-col justify-between h-auto">
-            <h2>Messages (Most Recent {MAX_DISPLAY_MESSAGES})</h2>
+            <h2>Messages (Most Recent {settings.maxDisplayMessages})</h2>
             <div className="flex gap-2 align-center flex-wrap mb-2">
               <small>Direct: {stats.direct}</small>
               <small>Persistent: {stats.persistent}</small>
@@ -316,7 +318,7 @@ const SubscribeView = () => {
         {messages.length !== 0 && (
           <ScrollShadow className="h-[500px] w-full">
             {messages.map((message) => (
-              <SolaceMessage key={message._extension_uid} message={message} />
+              <SolaceMessage key={message._extension_uid} message={message} maxPayloadLength={settings.maxPayloadLength} maxPropertyLength={settings.maxPropertyLength} />
             ))}
           </ScrollShadow>
         )}
