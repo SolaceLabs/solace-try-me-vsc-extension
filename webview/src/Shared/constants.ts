@@ -5,13 +5,18 @@ const MAX_DISPLAY_MESSAGES = 20;
 const MAX_PAYLOAD_LENGTH = 1024;
 const MAX_PROPERTY_LENGTH = 128;
 const BROKER_DISCONNECT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const PAYLOAD_BASE_PATH = "./.solace-try-me";
+const SAVE_PAYLOADS = false;
 // **
+
 
 export const DEFAULT_SETTINGS: ExtSettings = {
   maxDisplayMessages: MAX_DISPLAY_MESSAGES,
   maxPayloadLength: MAX_PAYLOAD_LENGTH,
   maxPropertyLength: MAX_PROPERTY_LENGTH,
   brokerDisconnectTimeout: BROKER_DISCONNECT_TIMEOUT,
+  savePayloads: SAVE_PAYLOADS,
+  payloadBasePath: PAYLOAD_BASE_PATH,
 };
 
 export const VSC_CONFIG_DEFAULT: VscConfigInterface = {

@@ -1,3 +1,4 @@
+import path from "path";
 import * as vscode from "vscode";
 
 const openTabs = new Set();
@@ -46,16 +47,51 @@ export function activate(context: vscode.ExtensionContext) {
 class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
-  resolveWebviewView(webviewView: vscode.WebviewView| vscode.WebviewPanel) {
+  resolveWebviewView(webviewView: vscode.WebviewView | vscode.WebviewPanel) {
     const { webview } = webviewView;
 
     webview.onDidReceiveMessage(async (message) => {
       if (message.command === "openInNewTab") {
-        const document = await vscode.workspace.openTextDocument({
-          content: message.content,
-          language: message.language ?? "plaintext",
-        });
-        vscode.window.showTextDocument(document, { preview: true });
+        try {
+          if (message.filePath && message.fileName) {
+            // Write content to a file and open it in a new tab
+            let uri = vscode.Uri.joinPath(
+              vscode.Uri.file(message.filePath),
+              message.fileName
+            );
+            const isAbsolutePath = path.isAbsolute(message.filePath);
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+
+            if (!isAbsolutePath && workspaceFolders) {
+              const workspacePath = workspaceFolders[0].uri.fsPath;
+              uri = vscode.Uri.joinPath(
+                vscode.Uri.file(workspacePath),
+                message.filePath,
+                message.fileName
+              );
+            }
+
+            await vscode.workspace.fs.writeFile(
+              uri,
+              Buffer.from(message.content, "utf8")
+            );
+            const document = await vscode.workspace.openTextDocument(uri);
+            vscode.window.showTextDocument(document, { preview: true });
+          } else {
+            const document = await vscode.workspace.openTextDocument({
+              content: message.content,
+              language: message.language ?? "plaintext",
+            });
+            vscode.window.showTextDocument(document, { preview: true });
+          }
+        } catch (error: unknown) {
+          console.error("Error opening file in new tab: ", error);
+          // Show VSC error message
+          vscode.window.showErrorMessage(
+            "Error opening file in new tab: " +
+              ((error as Error)?.message ?? error)
+          );
+        }
       } else if (message.command === "savePreferences") {
         this.context.globalState.update("preferences", message.preferences);
       } else if (message.command === "getPreferences") {

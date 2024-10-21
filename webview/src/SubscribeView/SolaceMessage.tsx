@@ -20,6 +20,8 @@ interface SolaceMessageProps {
   message: Message;
   maxPayloadLength: number;
   maxPropertyLength: number;
+  baseFilePath?: string;
+  highlight: string;
 }
 
 const keyNameMap: { [k: string]: string } = {
@@ -57,10 +59,35 @@ const transformMetaItem = ([key, value]: [string, unknown]) => {
   return [newKey, newValue];
 };
 
-const getContent = (content: string, maxLength: number) => {
+const getHighlightedContent = (
+  content: string,
+  highlight: string | null
+): JSX.Element | string => {
+  if (!highlight) return content;
+  // Check if content has highlight (case insensitive)
+  // split and add <mark> tag if so
+  const parts = content.split(new RegExp(highlight, "i"));
+  if (parts.length === 1) return content;
+  return parts.reduce<JSX.Element | string>((acc, part, index) => {
+    if (index === 0) return part;
+    return (
+      <>
+        {acc}
+        <mark>{highlight}</mark>
+        {part}
+      </>
+    );
+  }, "");
+};
+
+const getContent = (
+  content: string,
+  maxLength: number,
+  highlight: string | null
+) => {
   return content.length > maxLength ? (
     <>
-      {content.slice(0, maxLength)}
+      {getHighlightedContent(content.slice(0, maxLength), highlight)}
       <Tooltip
         content={`Content truncated to ${maxLength} character. Open message in VSC to view full content.`}
       >
@@ -68,11 +95,17 @@ const getContent = (content: string, maxLength: number) => {
       </Tooltip>
     </>
   ) : (
-    content
+    getHighlightedContent(content, highlight)
   );
 };
 
-const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceMessageProps) => {
+const SolaceMessage = ({
+  message,
+  maxPayloadLength,
+  maxPropertyLength,
+  baseFilePath,
+  highlight,
+}: SolaceMessageProps) => {
   const dataStr = formatDate(
     message.metadata.senderTimestamp ?? message.metadata.receiverTimestamp
   );
@@ -83,13 +116,14 @@ const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceM
 
   const userProperties = Object.entries(message.userProperties);
 
-  const payload = getContent(message.payload, maxPayloadLength);
+  const payload = getContent(message.payload, maxPayloadLength, highlight);
 
   return (
     <Card className="mb-3 mr-3">
       <CardHeader className="flex gap-3 overflow-x-auto">
         <Tooltip content="Open message in VSC">
-          <Button radius="sm"
+          <Button
+            radius="sm"
             size="sm"
             onClick={() => {
               let parsedPayload = message.payload;
@@ -106,7 +140,9 @@ const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceM
                   },
                   null,
                   2
-                )
+                ),
+                baseFilePath,
+                message._extension_uid
               );
             }}
           >
@@ -116,7 +152,9 @@ const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceM
         <div className="flex flex-col">
           <p className="text-md text-nowrap">
             Topic:{" "}
-            <span className="text-small text-default-500">{message.topic}</span>{" "}
+            <span className="text-small text-default-500">
+              {getHighlightedContent(message.topic, highlight)}
+            </span>
           </p>
           <p className="text-small text-default-500">{dataStr}</p>
         </div>
@@ -128,7 +166,7 @@ const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceM
             <div key={key} className="flex gap-2">
               <p className="text-sm capitalize">{key}</p>
               <p className="text-sm text-default-500">
-                {getContent(value, maxPropertyLength)}
+                {getContent(value, maxPropertyLength, null)}
               </p>
             </div>
           ))}
@@ -142,13 +180,15 @@ const SolaceMessage = ({ message, maxPayloadLength, maxPropertyLength }: SolaceM
             {userProperties.map(([key, value]) => (
               <div key={key} className="flex gap-2 flex-wrap">
                 <p className="text-sm capitalize">
-                  {key} ({convertTypeToString((value as { type: number }).type)}
+                  {getHighlightedContent(key, highlight)} (
+                  {convertTypeToString((value as { type: number }).type)}
                   ):
                 </p>
                 <p className="text-sm text-default-500">
                   {getContent(
                     String((value as { value: string }).value),
-                    maxPropertyLength
+                    maxPropertyLength,
+                    highlight
                   )}
                 </p>
               </div>

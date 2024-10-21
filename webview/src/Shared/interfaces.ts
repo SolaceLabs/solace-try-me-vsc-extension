@@ -16,6 +16,8 @@ export interface ExtSettings {
   maxPayloadLength: number;
   maxPropertyLength: number;
   brokerDisconnectTimeout: number;
+  savePayloads: boolean;
+  payloadBasePath: string;
 }
 
 export interface VscConfigInterface {
