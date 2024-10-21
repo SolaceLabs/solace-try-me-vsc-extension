@@ -2,6 +2,9 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
+## [0.0.7] - 2024-10-20
+- Added the feature of searching and filtering messages + the option to open messages as saved files.
+
 ## [0.0.6] - 2024-10-17
 - Added Settings Dialog with configurable extension settings, fixed topic issue in subscribe view disconnection.
 
