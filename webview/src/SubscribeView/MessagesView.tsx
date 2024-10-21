@@ -38,12 +38,14 @@ interface MessagesViewProps {
   messages: Message[];
   maxPayloadLength: number;
   maxPropertyLength: number;
+  baseFilePath?: string;
 }
 
 const MessagesView = ({
   messages,
   maxPayloadLength,
   maxPropertyLength,
+  baseFilePath,
 }: MessagesViewProps) => {
   const [filteredMessages, setFilteredMessages] = useState<Message[]>(messages);
   const [search, setSearch] = useState<string>("");
@@ -71,7 +73,7 @@ const MessagesView = ({
 
   return (
     <div>
-      <div className="flex gap-2 w-full align-center mb-2">
+      <div className="flex gap-2 w-full align-center">
         <Input
           placeholder="Filter Results"
           value={bounceSearch}
@@ -84,8 +86,7 @@ const MessagesView = ({
           <Eraser />
         </Button>
       </div>
-
-      <Divider />
+      <Divider className="my-2" />
       {filteredMessages.length > 0 && <ScrollShadow className="h-[500px] w-full">
         {filteredMessages.map((message) => (
           <SolaceMessage
@@ -93,6 +94,7 @@ const MessagesView = ({
             message={message}
             maxPayloadLength={maxPayloadLength}
             maxPropertyLength={maxPropertyLength}
+            baseFilePath={baseFilePath}
             highlight={search}
           />
         ))}

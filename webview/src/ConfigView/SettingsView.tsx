@@ -1,4 +1,5 @@
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Switch, Tooltip } from "@nextui-org/react";
+import { Info } from "lucide-react";
 
 import {
   ModalBody,
@@ -10,7 +11,7 @@ import {
 import { useSettings } from "../Shared/components/SettingsContext";
 import { DEFAULT_SETTINGS } from "../Shared/constants";
 
-const getInteger = (value: string, min=0) => {
+const getInteger = (value: string, min = 0) => {
   return Math.max(Math.abs(parseInt(value) || 0), min);
 };
 
@@ -27,6 +28,8 @@ const SettingsView = ({
       maxPayloadLength,
       maxPropertyLength,
       brokerDisconnectTimeout,
+      savePayloads,
+      payloadBasePath,
     },
     setSettings,
   } = useSettings();
@@ -48,13 +51,16 @@ const SettingsView = ({
       <ModalContent>
         {(onModalClose) => (
           <>
-            <ModalHeader>
-              Solace Try Me Extension Settings
-            </ModalHeader>
+            <ModalHeader>Solace Try Me Extension Settings</ModalHeader>
             <ModalBody className="flex flex-col gap-4">
               <Input
                 type="number"
                 label="Maximum number of visible messages"
+                endContent={
+                  <Tooltip content="Maximum number of messages that can be displayed in the subscribe view.">
+                    <Info />
+                  </Tooltip>
+                }
                 value={maxDisplayMessages.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -62,13 +68,18 @@ const SettingsView = ({
                     maxDisplayMessages: getInteger(e.target.value, 1),
                   }))
                 }
-                max={1000}
+                max={100}
                 min={1}
                 step={1}
               />
               <Input
                 type="number"
                 label="Maximum visible payload length"
+                endContent={
+                  <Tooltip content="Maximum length of the payload that can be displayed before truncation. You can still open the message in VSC">
+                    <Info />
+                  </Tooltip>
+                }
                 value={maxPayloadLength.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -82,6 +93,11 @@ const SettingsView = ({
               <Input
                 type="number"
                 label="Maximum visible property length"
+                endContent={
+                  <Tooltip content="Maximum length of the message properties (metadata and user properties) that can be displayed before truncation. You can still open the message in VSC">
+                    <Info />
+                  </Tooltip>
+                }
                 value={maxPropertyLength.toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
@@ -95,16 +111,55 @@ const SettingsView = ({
               <Input
                 type="number"
                 className="no-wrap"
-                label="Automatic broker disconnection after inactivity (minutes) "
+                label="Broker disconnection timeout"
+                endContent={
+                  <Tooltip content="Time in minutes after which the broker connection will be automatically disconnected if there is no activity.">
+                    <Info />
+                  </Tooltip>
+                }
                 value={(brokerDisconnectTimeout / 1000 / 60).toString()}
                 onChange={(e) =>
                   setSettings((prev) => ({
                     ...prev,
-                    brokerDisconnectTimeout: getInteger(e.target.value, 1) * 1000 * 60,
+                    brokerDisconnectTimeout:
+                      getInteger(e.target.value, 1) * 1000 * 60,
                   }))
                 }
                 min={1}
                 step={1}
+              />
+              <Switch
+                isSelected={savePayloads}
+                onValueChange={(savePayloads) => {
+                  setSettings((prev) => ({
+                    ...prev,
+                    savePayloads,
+                  }));
+                }}
+              >
+                <div className="flex align-center gap-3">
+                  Save payloads on open
+                  <Tooltip content="Whether to save the payload to a new file or an unsaved file when clicked on open payload in VSC.">
+                    <Info />
+                  </Tooltip>
+                </div>
+              </Switch>
+              <Input
+                type="text"
+                label="Payload storage directory"
+                endContent={
+                  <Tooltip content="You can use relative and absolute paths. Relative paths would be based on the VS Code location">
+                    <Info />
+                  </Tooltip>
+                }
+                isDisabled={!savePayloads}
+                value={payloadBasePath || ""}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    payloadBasePath: e.target.value,
+                  }))
+                }
               />
             </ModalBody>
             <ModalFooter>

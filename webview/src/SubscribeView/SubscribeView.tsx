@@ -326,6 +326,7 @@ const SubscribeView = () => {
           messages={messages}
           maxPayloadLength={settings.maxPayloadLength}
           maxPropertyLength={settings.maxPropertyLength}
+          baseFilePath={settings.savePayloads ? settings.payloadBasePath : undefined}
         />
       </div>
     </div>

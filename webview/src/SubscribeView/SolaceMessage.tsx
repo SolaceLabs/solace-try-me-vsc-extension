@@ -20,6 +20,7 @@ interface SolaceMessageProps {
   message: Message;
   maxPayloadLength: number;
   maxPropertyLength: number;
+  baseFilePath?: string;
   highlight: string;
 }
 
@@ -58,7 +59,10 @@ const transformMetaItem = ([key, value]: [string, unknown]) => {
   return [newKey, newValue];
 };
 
-const getHighlightedContent = (content: string, highlight: string | null): JSX.Element|string => {
+const getHighlightedContent = (
+  content: string,
+  highlight: string | null
+): JSX.Element | string => {
   if (!highlight) return content;
   // Check if content has highlight (case insensitive)
   // split and add <mark> tag if so
@@ -99,6 +103,7 @@ const SolaceMessage = ({
   message,
   maxPayloadLength,
   maxPropertyLength,
+  baseFilePath,
   highlight,
 }: SolaceMessageProps) => {
   const dataStr = formatDate(
@@ -135,7 +140,9 @@ const SolaceMessage = ({
                   },
                   null,
                   2
-                )
+                ),
+                baseFilePath,
+                message._extension_uid
               );
             }}
           >

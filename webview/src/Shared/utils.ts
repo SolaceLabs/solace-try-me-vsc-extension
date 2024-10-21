@@ -34,12 +34,25 @@ export const initializeVscConfig = () => {
 
 export const vscode = initializeVscConfig();
 
-export function openFileInNewTab(file: string, language = "json") {
-  vscode.postMessage({
+export function openFileInNewTab(
+  file: string,
+  baseFilePath: string = "",
+  id: string = Date.now().toString(),
+  language = "json",
+) {
+  const data: {
+    [key: string]: unknown;
+  } = {
     command: "openInNewTab",
     content: file,
     language: language,
-  });
+  };
+
+  if (baseFilePath) {
+    data["filePath"] = baseFilePath;
+    data["fileName"] = `solace-try-me-${id}.${language}`;
+  }
+  vscode.postMessage(data);
 }
 
 export function getVscConfig() {
