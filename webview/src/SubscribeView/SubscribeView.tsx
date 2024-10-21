@@ -7,7 +7,6 @@ import {
   RadioGroup,
   Radio,
   Divider,
-  ScrollShadow,
 } from "@nextui-org/react";
 import { SquareX, Trash2 } from "lucide-react";
 
@@ -21,9 +20,9 @@ import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import ConfigStore from "../Shared/components/ConfigStore";
 import ConnectionManager from "../Shared/components/ConnectionManager";
 import SolaceManager from "../Shared/SolaceManager";
-import SolaceMessage from "./SolaceMessage";
 import ErrorMessage from "../Shared/components/ErrorMessage";
 import { useSettings } from "../Shared/components/SettingsContext";
+import MessagesView from "./MessagesView";
 
 const SubscribeView = () => {
   const { settings } = useSettings();
@@ -323,21 +322,11 @@ const SubscribeView = () => {
             </Button>
           </div>
         </div>
-        {messages.length !== 0 && (
-          <ScrollShadow className="h-[500px] w-full">
-            {messages.map((message) => (
-              <SolaceMessage
-                key={message._extension_uid}
-                message={message}
-                maxPayloadLength={settings.maxPayloadLength}
-                maxPropertyLength={settings.maxPropertyLength}
-              />
-            ))}
-          </ScrollShadow>
-        )}
-        {messages.length === 0 && (
-          <p className="text-gray-500 text-center">No messages received yet.</p>
-        )}
+        <MessagesView
+          messages={messages}
+          maxPayloadLength={settings.maxPayloadLength}
+          maxPropertyLength={settings.maxPropertyLength}
+        />
       </div>
     </div>
   );
