@@ -85,6 +85,7 @@ class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
             vscode.window.showTextDocument(document, { preview: true });
           }
         } catch (error: unknown) {
+          console.error("Error opening file in new tab: ", error);
           // Show VSC error message
           vscode.window.showErrorMessage(
             "Error opening file in new tab: " +
