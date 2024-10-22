@@ -187,7 +187,6 @@ class SolaceManager {
       (topic) => new RegExp(topic.replace(/\*/g, "[^/]+").replace(">", ".*"))
     );
     console.log("Ignoring topics:", this.ignoreTopics);
-    
   }
 
   getBrokerConfig() {
