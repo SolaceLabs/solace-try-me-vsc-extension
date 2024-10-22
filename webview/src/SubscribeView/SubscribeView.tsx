@@ -184,7 +184,7 @@ const SubscribeView = () => {
           isRequired
           isDisabled={!solaceConnection}
           onValueChange={setTopicInputField}
-          onKeyDown={(e) => {
+          onKeyUp={(e) => {
             if (e.key === "Enter" && topicInputField.trim()) {
               subscribeTopic(topicInputField.trim());
               setTopicInputField("");
@@ -228,7 +228,7 @@ const SubscribeView = () => {
             isRequired
             isDisabled={!solaceConnection}
             onValueChange={setIgnoreTopicInputField}
-            onKeyDown={(e) => {
+            onKeyUp={(e) => {
               if (e.key === "Enter" && ignoreTopicInputField.trim()) {
                 setIgnoreTopics(
                   Array.from(new Set([...ignoreTopics, ignoreTopicInputField]))

@@ -1,4 +1,13 @@
+[![version](https://img.shields.io/github/package-json/v/SolaceLabs/solace-try-me-vsc-extension)](https://github.com/SolaceLabs/solace-try-me-vsc-extension)
+[![License](https://img.shields.io/github/license/SolaceLabs/solace-try-me-vsc-extension)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
+
+[![GitHub issues](https://img.shields.io/github/issues/SolaceLabs/solace-try-me-vsc-extension?color=red)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/issues)
+[![GitHub closed issues](https://img.shields.io/github/issues-closed/SolaceLabs/solace-try-me-vsc-extension?color=green)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/issues?q=is%3Aissue+is%3Aclosed)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/SolaceLabs/solace-try-me-vsc-extension?color=red)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/pulls)
+[![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/SolaceLabs/solace-try-me-vsc-extension?color=green)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/pulls?q=is%3Apr+is%3Aclosed)
+[![GitHub stars](https://img.shields.io/github/stars/SolaceLabs/solace-try-me-vsc-extension?style=social)](https://github.com/SolaceLabs/solace-try-me-vsc-extension/stargazers)
+
 
 # Solace Try Me VSC Extension
 
