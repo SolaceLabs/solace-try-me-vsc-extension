@@ -32,7 +32,10 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
     if (currentBroker) {
       if (solaceConnection) {
         if (
-          compareBrokerConfigs(solaceConnection.brokerConfig, currentBroker)
+          compareBrokerConfigs(
+            solaceConnection.getBrokerConfig(),
+            currentBroker
+          )
         ) {
           return;
         }
@@ -44,17 +47,16 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
       );
       setConnectionState(ConnectionState.DISCONNECTED);
 
-      solace.onConnectionStateChange = (
-        isConnected: boolean,
-        error: string | null
-      ) => {
-        setConnectionError(error);
-        if (isConnected) {
-          setConnectionState(ConnectionState.CONNECTED);
-        } else {
-          setConnectionState(ConnectionState.DISCONNECTED);
+      solace.setOnConnectionStateChange(
+        (isConnected: boolean, error: string | null) => {
+          setConnectionError(error);
+          if (isConnected) {
+            setConnectionState(ConnectionState.CONNECTED);
+          } else {
+            setConnectionState(ConnectionState.DISCONNECTED);
+          }
         }
-      };
+      );
       setSolaceConnection(solace);
     }
   }, [currentBroker, settings.brokerDisconnectTimeout, solaceConnection]);
@@ -109,7 +111,7 @@ const ConnectionManager = ({ onSetConnection }: ConnectionManagerProps) => {
       break;
     case ConnectionState.CONNECTING:
       buttonProps.children = "Connecting";
-      buttonProps.startContent = <Spinner color="current" size="sm" />
+      buttonProps.startContent = <Spinner color="current" size="sm" />;
       break;
     default:
       buttonProps.startContent = <Link2Off size={24} />;

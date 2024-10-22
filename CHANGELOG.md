@@ -2,6 +2,9 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
+## [0.0.8] - 2024-10-22
+- Added ignore topics functionality
+
 ## [0.0.7] - 2024-10-20
 - Added the feature of searching and filtering messages + the option to open messages as saved files.
 

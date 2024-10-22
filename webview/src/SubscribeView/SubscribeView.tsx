@@ -8,7 +8,7 @@ import {
   Radio,
   Divider,
 } from "@nextui-org/react";
-import { SquareX, Trash2 } from "lucide-react";
+import { Plus, SquareX, Trash2 } from "lucide-react";
 
 import {
   Configs,
@@ -34,6 +34,7 @@ const SubscribeView = () => {
     useState<solace.MessageConsumer | null>(null);
 
   const [topics, setTopics] = useState<string[]>([]);
+  const [ignoreTopics, setIgnoreTopics] = useState<string[]>([]);
   const [queueType, setQueueType] = useState<solace.QueueType>();
   const [queueName, setQueueName] = useState<string>();
   const [queueTopic, setQueueTopic] = useState<string>();
@@ -41,6 +42,8 @@ const SubscribeView = () => {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [topicInputField, setTopicInputField] = useState<string>("");
+  const [ignoreTopicInputField, setIgnoreTopicInputField] =
+    useState<string>("");
   const [openBindSettings, setOpenBindSettings] = useState(false);
   const [queueError, setQueueError] = useState<string | null>(null);
 
@@ -52,9 +55,9 @@ const SubscribeView = () => {
 
   useEffect(() => {
     if (solaceConnection) {
-      solaceConnection.onMessage = (message: Message) => {
+      solaceConnection.setOnMessage((message: Message) => {
         addMessage(message, settings.maxDisplayMessages);
-      };
+      });
       for (const topic of topics) {
         solaceConnection.subscribe(topic);
       }
@@ -89,6 +92,9 @@ const SubscribeView = () => {
   };
 
   const subscribeTopic = (topic: string) => {
+    if (ignoreTopics.includes(topic)) {
+      return;
+    }
     solaceConnection?.subscribe(topic);
     setTopics([...topics, topic]);
   };
@@ -118,6 +124,7 @@ const SubscribeView = () => {
 
   const configs: SubscribeConfigs = {
     topics,
+    ignoreTopics,
     queueType,
     queueName,
     queueTopic,
@@ -126,6 +133,7 @@ const SubscribeView = () => {
   const onLoadConfig = (config: Configs) => {
     const {
       topics: newTopics,
+      ignoreTopics,
       queueType,
       queueName,
       queueTopic,
@@ -138,6 +146,7 @@ const SubscribeView = () => {
       solaceConnection?.subscribe(topic);
     });
     setTopics(newTopics);
+    setIgnoreTopics(ignoreTopics || []);
 
     setQueueType(queueType);
     setQueueName(queueName);
@@ -150,6 +159,12 @@ const SubscribeView = () => {
   };
 
   const disabledSubscribe = !solaceConnection || !topicInputField.trim();
+
+  useEffect(() => {
+    if (solaceConnection) {
+      solaceConnection.setIgnoreTopics(ignoreTopics);
+    }
+  }, [ignoreTopics, solaceConnection]);
 
   return (
     <div className="pb-3">
@@ -169,6 +184,12 @@ const SubscribeView = () => {
           isRequired
           isDisabled={!solaceConnection}
           onValueChange={setTopicInputField}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && topicInputField.trim()) {
+              subscribeTopic(topicInputField.trim());
+              setTopicInputField("");
+            }
+          }}
         />
         <Button
           radius="sm"
@@ -196,6 +217,58 @@ const SubscribeView = () => {
                 No topics subscribed yet.
               </p>
             )}
+          </div>
+        </div>
+        <div className="flex gap-2 flex-col">
+          <Input
+            label="Ignore Topics"
+            placeholder="Enter a topic to ignore"
+            variant="bordered"
+            value={ignoreTopicInputField}
+            isRequired
+            isDisabled={!solaceConnection}
+            onValueChange={setIgnoreTopicInputField}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && ignoreTopicInputField.trim()) {
+                setIgnoreTopics(
+                  Array.from(new Set([...ignoreTopics, ignoreTopicInputField]))
+                );
+                setIgnoreTopicInputField("");
+              }
+            }}
+            endContent={
+              <Button
+                radius="lg"
+                variant="bordered"
+                isIconOnly
+                onPress={() => {
+                  if (ignoreTopicInputField.trim()) {
+                    setIgnoreTopics(
+                      Array.from(
+                        new Set([...ignoreTopics, ignoreTopicInputField])
+                      )
+                    );
+                    setIgnoreTopicInputField("");
+                  }
+                }}
+              >
+                <Plus />
+              </Button>
+            }
+          />
+          <div>
+            <div className="flex gap-2 flex-wrap overflow-auto pb-3 px-1">
+              {ignoreTopics.map((topic) => (
+                <Chip
+                  key={topic}
+                  onClose={() =>
+                    setIgnoreTopics(ignoreTopics.filter((t) => t !== topic))
+                  }
+                >
+                  {topic}
+                </Chip>
+              ))}
+            </div>
           </div>
         </div>
         <Accordion
@@ -326,7 +399,9 @@ const SubscribeView = () => {
           messages={messages}
           maxPayloadLength={settings.maxPayloadLength}
           maxPropertyLength={settings.maxPropertyLength}
-          baseFilePath={settings.savePayloads ? settings.payloadBasePath : undefined}
+          baseFilePath={
+            settings.savePayloads ? settings.payloadBasePath : undefined
+          }
         />
       </div>
     </div>

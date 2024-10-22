@@ -55,6 +55,7 @@ export interface PublishConfigs extends PublishOptions {
 
 export interface SubscribeConfigs {
   topics: string[];
+  ignoreTopics: string[];
   queueType?: solace.QueueType;
   queueName?: string;
   queueTopic?: string;

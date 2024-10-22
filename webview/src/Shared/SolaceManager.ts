@@ -14,12 +14,13 @@ SolclientFactory.init(factoryProps);
 SolclientFactory.setLogLevel(solace.LogLevel.DEBUG);
 
 class SolaceManager {
-  session: solace.Session | undefined;
-  isConnected = false;
-  onMessage!: onMessageCallback;
-  brokerConfig!: BrokerConfig;
-  inactivityTimeout: NodeJS.Timeout | null = null;
-  onConnectionStateChange!: (
+  private session: solace.Session | undefined;
+  private isConnected = false;
+  private onMessage!: onMessageCallback;
+  private brokerConfig!: BrokerConfig;
+  private inactivityTimeout: NodeJS.Timeout | null = null;
+  private ignoreTopics: RegExp[] = [];
+  private onConnectionStateChange!: (
     isConnected: boolean,
     error: string | null
   ) => void;
@@ -35,10 +36,21 @@ class SolaceManager {
     }, this.brokerDisconnectTimeout);
   }
 
+  shouldIgnoreMessage(topic: string) {
+    if (!this.ignoreTopics.length) {
+      return false;
+    }
+    return this.ignoreTopics.some((ignoreTopic) => ignoreTopic.test(topic));
+  }
+
   handleMessage(message: solace.Message) {
     this.resetInactivityTimeout();
     const destination = message.getDestination();
     const topic = destination ? destination.getName() : "unknown";
+    if (this.shouldIgnoreMessage(topic)) {
+      console.debug("Ignoring message for topic:", topic);
+      return;
+    }
     const payload = message.getBinaryAttachment()?.toString() ?? "";
     const metadata: Message["metadata"] = {
       deliveryMode: message.getDeliveryMode(),
@@ -159,6 +171,31 @@ class SolaceManager {
 
   setOnMessage(onMessage: onMessageCallback) {
     this.onMessage = onMessage;
+  }
+
+  setOnConnectionStateChange(
+    onConnectionStateChange: (
+      isConnected: boolean,
+      error: string | null
+    ) => void
+  ) {
+    this.onConnectionStateChange = onConnectionStateChange;
+  }
+
+  setIgnoreTopics(ignoreTopics: string[]) {
+    this.ignoreTopics = ignoreTopics.map(
+      (topic) => new RegExp(topic.replace(/\*/g, "[^/]+").replace(">", ".*"))
+    );
+    console.log("Ignoring topics:", this.ignoreTopics);
+    
+  }
+
+  getBrokerConfig() {
+    return this.brokerConfig;
+  }
+
+  getConnectionState() {
+    return this.isConnected;
   }
 
   subscribe(topic: string) {
