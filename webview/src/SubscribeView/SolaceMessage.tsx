@@ -164,7 +164,7 @@ const SolaceMessage = ({
         <div className="flex gap-1 flex-col text-sm">
           {metadata.map(([key, value]) => (
             <div key={key} className="flex gap-2">
-              <p className="text-sm capitalize">{key}</p>
+              <p className="text-sm">{key}</p>
               <p className="text-sm text-default-500">
                 {getContent(value, maxPropertyLength, null)}
               </p>
@@ -179,7 +179,7 @@ const SolaceMessage = ({
             <p className="text-md pb-2">User Properties:</p>
             {userProperties.map(([key, value]) => (
               <div key={key} className="flex gap-2 flex-wrap">
-                <p className="text-sm capitalize">
+                <p className="text-sm">
                   {getHighlightedContent(key, highlight)} (
                   {convertTypeToString((value as { type: number }).type)}
                   ):

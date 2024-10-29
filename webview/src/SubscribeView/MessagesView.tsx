@@ -22,15 +22,16 @@ const filterMessages = (messages: Message[], filter: string) => {
           searchable += key + SEARCH_DELIMITER + value + SEARCH_DELIMITER;
         }
       }
+      searchable = searchable.toLowerCase();
       return [message, searchable] as [Message, string];
     })
-    .filter(([_, searchable]) => {
+    .filter((searchable) => {
       // Filter stage
-      return searchable.includes(filter);
+      return searchable[1].includes(filter);
     })
-    .map(([message, _]) => {
+    .map((message) => {
       // Restore stage
-      return message;
+      return message[0];
     });
 };
 
@@ -63,7 +64,7 @@ const MessagesView = ({
         setSearch(bounceSearch);
       }
     }, BOUNCE_DELAY);
-  }, [bounceSearch]);
+  }, [bounceSearch, search]);
 
   if (messages.length === 0) {
     return (
@@ -79,26 +80,31 @@ const MessagesView = ({
           value={bounceSearch}
           onChange={(e) => setBounceSearch(e.target.value)}
         />
-        <Button onClick={() => {
+        <Button
+          onClick={() => {
             setSearch("");
             setBounceSearch("");
-        }} isIconOnly>
+          }}
+          isIconOnly
+        >
           <Eraser />
         </Button>
       </div>
       <Divider className="my-2" />
-      {filteredMessages.length > 0 && <ScrollShadow className="h-[500px] w-full">
-        {filteredMessages.map((message) => (
-          <SolaceMessage
-            key={message._extension_uid}
-            message={message}
-            maxPayloadLength={maxPayloadLength}
-            maxPropertyLength={maxPropertyLength}
-            baseFilePath={baseFilePath}
-            highlight={search}
-          />
-        ))}
-      </ScrollShadow>}
+      {filteredMessages.length > 0 && (
+        <ScrollShadow className="h-[500px] w-full">
+          {filteredMessages.map((message) => (
+            <SolaceMessage
+              key={message._extension_uid}
+              message={message}
+              maxPayloadLength={maxPayloadLength}
+              maxPropertyLength={maxPropertyLength}
+              baseFilePath={baseFilePath}
+              highlight={search}
+            />
+          ))}
+        </ScrollShadow>
+      )}
       {filteredMessages.length === 0 && (
         <p className="text-gray-500 text-center">No messages found.</p>
       )}
