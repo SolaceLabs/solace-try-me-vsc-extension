@@ -15,22 +15,22 @@ const filterMessages = (messages: Message[], filter: string) => {
   return messages
     .map((message) => {
       // stringify stage
-      let searchable = message.topic + SEARCH_DELIMITER;
-      searchable += message.payload + SEARCH_DELIMITER;
+      let searchable = message.topic.toLowerCase()+ SEARCH_DELIMITER;
+      searchable += message.payload.toLowerCase() + SEARCH_DELIMITER;
       if (message.userProperties) {
         for (const [key, value] of Object.entries(message.userProperties)) {
-          searchable += key + SEARCH_DELIMITER + value + SEARCH_DELIMITER;
+          searchable += key.toLowerCase() + SEARCH_DELIMITER + String(value).toLowerCase() + SEARCH_DELIMITER;
         }
       }
       return [message, searchable] as [Message, string];
     })
-    .filter(([_, searchable]) => {
+    .filter((searchable) => {
       // Filter stage
-      return searchable.includes(filter);
+      return searchable[1].includes(filter);
     })
-    .map(([message, _]) => {
+    .map((message) => {
       // Restore stage
-      return message;
+      return message[0];
     });
 };
 
@@ -63,7 +63,7 @@ const MessagesView = ({
         setSearch(bounceSearch);
       }
     }, BOUNCE_DELAY);
-  }, [bounceSearch]);
+  }, [bounceSearch, search]);
 
   if (messages.length === 0) {
     return (
