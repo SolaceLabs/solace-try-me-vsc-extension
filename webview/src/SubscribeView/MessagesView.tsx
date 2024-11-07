@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Input, Divider, ScrollShadow } from "@nextui-org/react";
-import { Eraser } from "lucide-react";
+import {
+  Button,
+  Input,
+  Divider,
+  ScrollShadow,
+  Tooltip,
+} from "@nextui-org/react";
+import { Eraser, Rows4 } from "lucide-react";
 
 import SolaceMessage from "./SolaceMessage";
 import { Message } from "../Shared/interfaces";
@@ -12,6 +18,7 @@ const BOUNCE_DELAY = 400;
 
 const filterMessages = (messages: Message[], filter: string) => {
   if (!filter) return messages;
+  filter = filter.toLowerCase();
   return messages
     .map((message) => {
       // stringify stage
@@ -51,11 +58,14 @@ const MessagesView = ({
   const [filteredMessages, setFilteredMessages] = useState<Message[]>(messages);
   const [search, setSearch] = useState<string>("");
   const [bounceSearch, setBounceSearch] = useState<string>("");
+  const [compactView, setCompactView] = useState<boolean>(false);
   const bounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     setFilteredMessages(filterMessages(messages, search));
   }, [messages, search]);
+
+  console.log(messages);
 
   useEffect(() => {
     clearTimeout(bounceRef.current);
@@ -66,30 +76,48 @@ const MessagesView = ({
     }, BOUNCE_DELAY);
   }, [bounceSearch, search]);
 
-  if (messages.length === 0) {
-    return (
-      <p className="text-gray-500 text-center">No messages received yet.</p>
-    );
-  }
-
   return (
     <div>
-      <div className="flex gap-2 w-full align-center">
+      <div className="flex gap-2 w-full items-center">
         <Input
           placeholder="Filter Results"
           value={bounceSearch}
           onChange={(e) => setBounceSearch(e.target.value)}
+          endContent={
+            <Tooltip content="Clear Filter">
+              <Button
+                onClick={() => {
+                  setSearch("");
+                  setBounceSearch("");
+                }}
+                isIconOnly
+                variant="light"
+                radius="lg"
+                size="sm"
+              >
+                <Eraser />
+              </Button>
+            </Tooltip>
+          }
         />
-        <Button
-          onClick={() => {
-            setSearch("");
-            setBounceSearch("");
-          }}
-          isIconOnly
+        <Tooltip
+          content={compactView ? "Disable Compact View" : "Compact View"}
         >
-          <Eraser />
-        </Button>
+          <Button
+            onClick={() => setCompactView(!compactView)}
+            isIconOnly
+            variant={compactView ? "shadow" : "light"}
+            radius="sm"
+          >
+            <Rows4 />
+          </Button>
+        </Tooltip>
       </div>
+      {search.length > 0 && (
+        <p className="text-sm text-gray-500 mt-1 ml-3">
+          Showing {filteredMessages.length} of {messages.length} messages.
+        </p>
+      )}
       <Divider className="my-2" />
       {filteredMessages.length > 0 && (
         <ScrollShadow className="h-[500px] w-full">
@@ -97,6 +125,7 @@ const MessagesView = ({
             <SolaceMessage
               key={message._extension_uid}
               message={message}
+              compactMode={compactView}
               maxPayloadLength={maxPayloadLength}
               maxPropertyLength={maxPropertyLength}
               baseFilePath={baseFilePath}
@@ -105,7 +134,10 @@ const MessagesView = ({
           ))}
         </ScrollShadow>
       )}
-      {filteredMessages.length === 0 && (
+      {messages.length === 0 && (
+        <p className="text-gray-500 text-center">No messages received yet.</p>
+      )}
+      {messages.length > 0 && filteredMessages.length === 0 && (
         <p className="text-gray-500 text-center">No messages found.</p>
       )}
     </div>

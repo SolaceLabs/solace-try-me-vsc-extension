@@ -18,6 +18,7 @@ import { MessageDeliveryModeType } from "solclientjs";
 
 interface SolaceMessageProps {
   message: Message;
+  compactMode: boolean;
   maxPayloadLength: number;
   maxPropertyLength: number;
   baseFilePath?: string;
@@ -105,10 +106,77 @@ const SolaceMessage = ({
   maxPropertyLength,
   baseFilePath,
   highlight,
+  compactMode,
 }: SolaceMessageProps) => {
   const dataStr = formatDate(
-    message.metadata.senderTimestamp ?? message.metadata.receiverTimestamp
+    message.metadata.senderTimestamp ?? message.metadata.receiverTimestamp,
+    compactMode
   );
+
+  const payload = getContent(message.payload, maxPayloadLength, highlight);
+
+  let subheader: string | JSX.Element = dataStr;
+
+  if (compactMode) {
+    const userPropCount = Object.keys(message.userProperties).length;
+    const payloadLength = message.payload.length;
+    subheader = (
+      <>
+        {subheader}
+        <span className="text-foreground"> | </span>
+        Payload size: {payloadLength}
+        <span className="text-foreground"> | </span>
+        {userPropCount} User Props
+      </>
+    );
+  }
+
+  const cardHeader = (
+    <CardHeader className="flex gap-3 overflow-x-auto p-2">
+      <Tooltip content="Open message in VSC">
+        <Button
+          radius="sm"
+          size="sm"
+          className={compactMode ? "min-w-10" : ""}
+          onClick={() => {
+            let parsedPayload = message.payload;
+            try {
+              parsedPayload = JSON.parse(message.payload);
+            } catch {
+              // Payload not JSON - Do nothing
+            }
+            openFileInNewTab(
+              JSON.stringify(
+                {
+                  ...message,
+                  payload: parsedPayload,
+                },
+                null,
+                2
+              ),
+              baseFilePath,
+              message._extension_uid
+            );
+          }}
+        >
+          <ExternalLink size={16} />
+        </Button>
+      </Tooltip>
+      <div className="flex flex-col">
+        <p className="text-md text-nowrap">
+          Topic:{" "}
+          <span className="text-small text-default-500">
+            {getHighlightedContent(message.topic, highlight)}
+          </span>
+        </p>
+        <p className="text-small text-default-500">{subheader}</p>
+      </div>
+    </CardHeader>
+  );
+
+  if (compactMode) {
+    return <Card className="mb-2 mr-2">{cardHeader}</Card>;
+  }
 
   const metadata = Object.entries(message.metadata)
     .filter(([, value]) => value !== null && value !== undefined)
@@ -116,49 +184,9 @@ const SolaceMessage = ({
 
   const userProperties = Object.entries(message.userProperties);
 
-  const payload = getContent(message.payload, maxPayloadLength, highlight);
-
   return (
-    <Card className="mb-3 mr-3">
-      <CardHeader className="flex gap-3 overflow-x-auto">
-        <Tooltip content="Open message in VSC">
-          <Button
-            radius="sm"
-            size="sm"
-            onClick={() => {
-              let parsedPayload = message.payload;
-              try {
-                parsedPayload = JSON.parse(message.payload);
-              } catch {
-                // Payload not JSON - Do nothing
-              }
-              openFileInNewTab(
-                JSON.stringify(
-                  {
-                    ...message,
-                    payload: parsedPayload,
-                  },
-                  null,
-                  2
-                ),
-                baseFilePath,
-                message._extension_uid
-              );
-            }}
-          >
-            <ExternalLink size={16} />
-          </Button>
-        </Tooltip>
-        <div className="flex flex-col">
-          <p className="text-md text-nowrap">
-            Topic:{" "}
-            <span className="text-small text-default-500">
-              {getHighlightedContent(message.topic, highlight)}
-            </span>
-          </p>
-          <p className="text-small text-default-500">{dataStr}</p>
-        </div>
-      </CardHeader>
+    <Card className="mb-3 mr-2">
+      {cardHeader}
       <Divider />
       <CardBody>
         <div className="flex gap-1 flex-col text-sm">
