@@ -2,6 +2,9 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
+## [0.0.11] - 2024-11-07
+- Added compact vide mode to list of messages
+
 ## [0.0.10] - 2024-10-29
 - Ignore case filtering + case sensitive meta/userProp printing
 
