@@ -92,7 +92,7 @@ const SubscribeView = () => {
   };
 
   const subscribeTopic = (topic: string) => {
-    if (ignoreTopics.includes(topic)) {
+    if (topics.includes(topic)) {
       return;
     }
     solaceConnection?.subscribe(topic);
@@ -122,6 +122,13 @@ const SubscribeView = () => {
     }
   };
 
+  const stopQueueConsumer = () => {
+    if (queueConsumer) {
+      queueConsumer.disconnect();
+      setQueueConsumer(null);
+    }
+  }
+
   const configs: SubscribeConfigs = {
     topics,
     ignoreTopics,
@@ -138,6 +145,7 @@ const SubscribeView = () => {
       queueName,
       queueTopic,
     } = config as SubscribeConfigs;
+    stopQueueConsumer();
 
     topics.forEach((topic) => {
       solaceConnection?.unsubscribe(topic);
@@ -151,6 +159,7 @@ const SubscribeView = () => {
     setQueueType(queueType);
     setQueueName(queueName);
     setQueueTopic(queueTopic);
+    
     if (queueType) {
       setOpenBindSettings(true);
     } else {
@@ -283,6 +292,7 @@ const SubscribeView = () => {
               setQueueName(undefined);
               setQueueTopic(undefined);
               setOpenBindSettings(false);
+              stopQueueConsumer();
             }
           }}
         >
@@ -297,7 +307,7 @@ const SubscribeView = () => {
                 value={queueType}
                 isDisabled={!solaceConnection}
                 onValueChange={(value) => {
-                  console.log(value);
+                  stopQueueConsumer();
                   setQueueType(value as solace.QueueType);
                 }}
               >
@@ -338,16 +348,16 @@ const SubscribeView = () => {
                 onPress={() => {
                   setQueueError(null);
                   if (queueConsumer) {
-                    queueConsumer.disconnect();
-                    setQueueConsumer(null);
+                    stopQueueConsumer();
                   } else {
                     startQueueConsumer();
                   }
                 }}
                 isDisabled={
+                  !queueConsumer && (
                   !solaceConnection ||
                   !queueName ||
-                  (queueType === solace.QueueType.TOPIC_ENDPOINT && !queueTopic)
+                  (queueType === solace.QueueType.TOPIC_ENDPOINT && !queueTopic))
                 }
               >
                 {queueConsumer ? "Stop Consume" : "Start Consume"}
