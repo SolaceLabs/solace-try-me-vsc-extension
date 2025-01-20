@@ -2,6 +2,9 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
+## [0.0.12] - 2025-01-20
+- Fixed some queue disconnection issues
+
 ## [0.0.11] - 2024-11-07
 - Added compact vide mode to list of messages
 
