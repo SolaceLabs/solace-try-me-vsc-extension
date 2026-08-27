@@ -1,0 +1,25 @@
+version: 3
+
+project:
+  locator: SolaceLabs_solace-try-me-vsc-extension
+  id: SolaceLabs_solace-try-me-vsc-extension
+  name: solace-try-me-vsc-extension
+  teams: []
+  labels:
+    - javascript
+
+vendoredDependencies:
+  forceRescans: false
+  scanMethod: CLILicenseScan
+  licenseScanPathFilters:
+    exclude:
+      - "./.git"
+      - "./.github"
+
+paths:
+  exclude:
+    - ./.git
+    - ./.github
+
+telemetry:
+  scope: full
