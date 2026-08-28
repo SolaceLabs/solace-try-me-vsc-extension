@@ -17,16 +17,9 @@ permissions:
 
 jobs:
   sca_scan:
-    strategy:
-      matrix:
-        include:
-          - { path: ., name: solace-try-me-vsc-extension }
-          - { path: webview, name: solace-try-me-vsc-extension-webview }
     uses: SolaceDev/solace-public-workflows/.github/workflows/sca-scan-and-guard.yaml@main
     with:
       setup_actions: '["setup-node"]'
-      additional_scan_params: |
-        fossa.only_path=${{ matrix.path }}
     secrets:
       FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
@@ -38,11 +31,6 @@ jobs:
       needs.sca_scan.result == 'success'
       && github.event_name == 'push'
       && github.ref_name == github.event.repository.default_branch
-    strategy:
-      matrix:
-        include:
-          - { name: solace-try-me-vsc-extension }
-          - { name: solace-try-me-vsc-extension-webview }
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -65,7 +53,7 @@ jobs:
           ddb_item_to_be_added: |
             {
               "squad": "cto",
-              "repository": "${{ matrix.name }}",
+              "repository": "${{ github.event.repository.name }}",
               "dev": {
                 "sha": "${{ github.sha }}",
                 "version": "${{ github.ref_name }}"
