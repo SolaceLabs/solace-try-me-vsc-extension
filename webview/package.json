@@ -12,6 +12,7 @@
   "dependencies": {
     "@nextui-org/react": "^2.6.11",
     "@tanstack/react-virtual": "^3.14.13",
+    "fflate": "^0.8.3",
     "framer-motion": "^12.43.0",
     "lucide-react": "^1.48.0",
     "react": "^18.3.1",

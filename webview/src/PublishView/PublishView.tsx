@@ -18,6 +18,7 @@ import {
 } from "../Shared/interfaces";
 import ConfigStore from "../Shared/components/ConfigStore";
 import ErrorMessage from "../Shared/components/ErrorMessage";
+import IconButton from "../Shared/components/IconButton";
 import UserProperties from "./UserProperties";
 import PublishHistory from "./PublishHistory";
 import SolaceMessage from "../SubscribeView/SolaceMessage";
@@ -408,7 +409,7 @@ const PublishView = () => {
       {reply && (
         <div className="mt-3">
           <p className="text-sm mb-1">Reply received in {reply.rttMs} ms</p>
-          <SolaceMessage message={reply.message} compactMode={false} maxPayloadLength={4096} maxPropertyLength={256} highlight="" />
+          <SolaceMessage message={reply.message} compactMode={false} maxPayloadLength={4096} maxPropertyLength={256} />
         </div>
       )}
       <div className="flex justify-between items-end gap-4 mt-4">
@@ -421,22 +422,19 @@ const PublishView = () => {
             <small className={stats.rejected ? "text-danger" : ""}>Rejected: {stats.rejected}</small>
           </div>
         </div>
-        <div className="flex flex-wrap justify-end items-end gap-1 mt-3">
-          <Button
-            radius="sm"
-            size="sm"
-            variant="bordered"
-            startContent={<Trash2 size={12} />}
+        <div className="flex justify-end items-end gap-1 mt-3 shrink-0">
+          <IconButton
+            label="Clear Stats"
             onPress={() => {
               setStats(EMPTY_STATS);
               setLastRejection(null);
             }}
           >
-            Clear Stats
-          </Button>
-          <Button radius="sm" size="sm" variant="bordered" startContent={<Delete size={12} />} onPress={clearFields}>
-            Clear Fields
-          </Button>
+            <Trash2 />
+          </IconButton>
+          <IconButton label="Clear Fields" onPress={clearFields}>
+            <Delete />
+          </IconButton>
         </div>
       </div>
       {lastRejection && <ErrorMessage>Last rejected message: {lastRejection}</ErrorMessage>}

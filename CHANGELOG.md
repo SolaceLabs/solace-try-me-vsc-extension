@@ -2,6 +2,19 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
+## [0.1.2] - 2026-10-01
+
+### New
+- Message search can be limited to the topic, the payload or the user properties, and has **Match case**, **Use regular expression** and **Hide matches** toggles. An invalid regular expression is shown under the filter instead of filtering. The filter is kept when the view is reloaded.
+- **Quick filters** narrow the message list by source (Direct, Queue, Browsed, Reply), delivery mode (Direct, Persistent, Non-Persistent), message type (Text, Binary, Map, Stream), redelivered messages and messages with user properties. They combine with the search, and the list shows "Showing X of Y".
+- Topic actions on each message: filter the list to this topic, ignore this topic (adds it to Ignore Topics), subscribe to this topic and copy the topic.
+- Each payload can be shown as Raw, Pretty JSON, Hex or Base64. Pretty JSON is offered only when it keeps the payload's exact values (no large or reformatted numbers or duplicate keys). Binary payloads start as Base64. The maximum visible payload length still applies.
+- Select messages (with "Select all listed" and "Clear selection") and **Export selected as ZIP**, or **Export listed as ZIP**. The archive has one JSON file per message, with the same content as "Open in VS Code", named like `0001_orders-created_2026-10-01T14-17-28-124Z.json`. VS Code asks where to save it, starting in the workspace folder.
+
+### Changed
+- The "Export the listed messages as JSON" button is removed; use **Export listed as ZIP**.
+- "Clear Fields", "Clear Messages" and "Clear Stats" (Subscribe) and "Clear Stats" and "Clear Fields" (Publish) are icon buttons with tooltips, like the message list toolbar.
+
 ## [0.1.1] - 2026-10-01
 - Settings: the info tooltips next to the switches show on hover again.
 - Removed the Getting Started walkthrough and its command, menu entry and links. "Start a Local Broker (Docker)" is still available.
