@@ -1,0 +1,21 @@
+const ALLOWED_PROTOCOLS = new Set(["ws:", "wss:", "http:", "https:"]);
+
+export function validateBrokerUrl(value: string): string | null {
+  const urls = value.split(",").map((u) => u.trim()).filter(Boolean);
+  if (!urls.length) return "Enter a URL.";
+  for (const url of urls) {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return `"${url}" is not a valid URL. Use e.g. ws://localhost:8008 or wss://host:443.`;
+    }
+    if (parsed.protocol === "tcp:" || parsed.protocol === "tcps:") {
+      return "tcp:// and tcps:// cannot be used from VS Code's webview. Use the broker's ws:// or wss:// port.";
+    }
+    if (!ALLOWED_PROTOCOLS.has(parsed.protocol) || !parsed.hostname) {
+      return `"${url}" must start with ws://, wss://, http:// or https://.`;
+    }
+  }
+  return null;
+}

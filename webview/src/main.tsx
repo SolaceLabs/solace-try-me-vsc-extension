@@ -1,75 +1,82 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Accordion, AccordionItem } from "./Shared/components/Accordion";
 
 import ConfigView from "./ConfigView/ConfigView";
 import PublishView from "./PublishView/PublishView";
 import SubscribeView from "./SubscribeView/SubscribeView";
-import { VscConfigInterface } from "./Shared/interfaces";
-import { getVscConfig, setVscConfig } from "./Shared/utils";
+import { Views } from "./Shared/interfaces";
+import { usePreferences } from "./Shared/components/SettingsContext";
+import { PublishDraftProvider } from "./Shared/components/PublishDraftContext";
+import ErrorBoundary from "./Shared/components/ErrorBoundary";
+import { host } from "./Shared/host";
+import { SOLCLIENT_VERSION } from "./Shared/SolaceManager";
 
 const Main = () => {
-  const [tabs, setTabs] = useState<VscConfigInterface["recentlyUsed"]["views"]>(
-    ["config"]
-  );
+  const { preferences, loaded, update } = usePreferences();
+  const [tabs, setTabs] = useState<Views[]>(["config"]);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    getVscConfig().then((state) => {
-      if (state && state.recentlyUsed && state.recentlyUsed.views) {
-        setTabs(state.recentlyUsed.views);
+    if (loaded && !initialized.current) {
+      initialized.current = true;
+      setTabs(preferences.recentlyUsed.views);
+    }
+  }, [loaded, preferences.recentlyUsed.views]);
+
+  useEffect(() => {
+    host.post("hello", { solclientVersion: SOLCLIENT_VERSION });
+    return host.on("setTheme", (message) => {
+      if (document.body.parentElement && typeof message.theme === "string") {
+        document.body.parentElement.className = message.theme;
       }
     });
   }, []);
 
-  useEffect(() => {
-    const listener = (event: MessageEvent) => {
-      const message = event.data;
-      if (message.command === "setTheme") {
-        const theme = message.theme;
-        if (document.body.parentElement) {
-          document.body.parentElement.className = theme;
-        }
-      }
-    };
-    window.addEventListener("message", listener);
-    return () => {
-      window.removeEventListener("message", listener);
-    };
-  }, []);
+  const changeTabs = useCallback(
+    (next: Views[]) => {
+      setTabs(next);
+      update({ type: "setViews", views: next }).catch(() => undefined);
+    },
+    [update]
+  );
+
+  const openPublish = useCallback(() => {
+    setTabs((prev) => {
+      if (prev.includes("publish")) return prev;
+      const next: Views[] = [...prev, "publish"];
+      update({ type: "setViews", views: next }).catch(() => undefined);
+      return next;
+    });
+  }, [update]);
 
   return (
-    <main className="w-full h-full">
-      <Accordion
-        selectionMode="multiple"
-        defaultExpandedKeys={["config"]}
-        keepContentMounted
-        selectedKeys={tabs}
-        onSelectionChange={(selectedKeys) => {
-          const newTabs = Array.from(
-            selectedKeys
-          ) as VscConfigInterface["recentlyUsed"]["views"];
-          setTabs(newTabs);
-          setVscConfig((state) => {
-            const newState = { ...state };
-            newState.recentlyUsed.views = newTabs;
-            return newState;
-          });
-        }}
-      >
-        <AccordionItem
-          key="config"
-          aria-label="Broker Config"
-          title="Broker Config"
+    <PublishDraftProvider onDraft={openPublish}>
+      <main className="w-full h-full">
+        <Accordion
+          selectionMode="multiple"
+          defaultExpandedKeys={["config"]}
+          keepContentMounted
+          selectedKeys={tabs}
+          onSelectionChange={(selectedKeys) => changeTabs(Array.from(selectedKeys) as Views[])}
         >
-          <ConfigView />
-        </AccordionItem>
-        <AccordionItem key="publish" aria-label="Publish" title="Publish">
-          <PublishView />
-        </AccordionItem>
-        <AccordionItem key="subscribe" aria-label="Subscribe" title="Subscribe">
-          <SubscribeView />
-        </AccordionItem>
-      </Accordion>
-    </main>
+          <AccordionItem key="config" aria-label="Broker Config" title="Broker Config">
+            <ErrorBoundary name="Broker Config">
+              <ConfigView />
+            </ErrorBoundary>
+          </AccordionItem>
+          <AccordionItem key="publish" aria-label="Publish" title="Publish">
+            <ErrorBoundary name="Publish">
+              <PublishView />
+            </ErrorBoundary>
+          </AccordionItem>
+          <AccordionItem key="subscribe" aria-label="Subscribe" title="Subscribe">
+            <ErrorBoundary name="Subscribe">
+              <SubscribeView />
+            </ErrorBoundary>
+          </AccordionItem>
+        </Accordion>
+      </main>
+    </PublishDraftProvider>
   );
 };
 

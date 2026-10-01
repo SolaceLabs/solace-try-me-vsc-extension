@@ -1,17 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
-import { Button, Tooltip, Select, SelectItem, Input } from "@nextui-org/react";
-import { Save, RefreshCcw, Trash2 } from "lucide-react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ModalBody,
-  Modal,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from "./Modal";
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Input,
+  Tooltip,
+} from "@nextui-org/react";
+import { ChevronDown, RefreshCcw, Save, Trash2 } from "lucide-react";
 
-import { deepCompareObjects, getVscConfig, setVscConfig } from "../utils";
+import { ModalBody, Modal, ModalContent, ModalFooter, ModalHeader } from "./Modal";
+import { configsEqual } from "../utils";
 import { Configs } from "../interfaces";
+import { usePreferences } from "./SettingsContext";
+import { usePersistentState } from "../usePersistentState";
+import { logger } from "../logger";
 
 interface ConfigStoreProps {
   currentConfig: Configs;
@@ -20,195 +24,166 @@ interface ConfigStoreProps {
   isDisabled?: boolean;
 }
 
-const ConfigStore = ({
-  currentConfig,
-  onLoadConfig,
-  storeKey,
-  isDisabled = false,
-}: ConfigStoreProps) => {
-  const [lastSavedConfig, setLastSavedConfig] = useState<Configs>();
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [existingConfigs, setExistingConfigs] = useState<
-    { name: string; config: Configs }[]
-  >([]);
-  const [selectedConfigName, setSelectedConfigName] = useState<string>();
-
+/**
+ * Named presets. Presets are only applied by picking one from the menu, never by a
+ * keyboard selection change, and deleting is a separate, confirmed action.
+ */
+const ConfigStore = ({ currentConfig, onLoadConfig, storeKey, isDisabled = false }: ConfigStoreProps) => {
+  const { preferences, update } = usePreferences();
+  const presets = preferences.recentlyUsed[storeKey] as { name: string; config: Configs }[];
+  const [selectedName, setSelectedName] = usePersistentState<string | undefined>(
+    `presets.${storeKey}.selected`,
+    undefined
+  );
   const [showNameModal, setShowNameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tempName, setTempName] = useState("");
 
-  useEffect(() => {
-    const hasUnchanged =
-      lastSavedConfig &&
-      selectedConfigName &&
-      currentConfig &&
-      !deepCompareObjects(lastSavedConfig, currentConfig);
-    setHasUnsavedChanges(!!hasUnchanged);
-  }, [currentConfig, lastSavedConfig, selectedConfigName]);
+  const selected = presets.find((p) => p.name === selectedName);
 
-  const loadExistingConfigs = useCallback(() => {
-    getVscConfig().then((state) => {
-      if (state && state.recentlyUsed && state.recentlyUsed[storeKey]) {
-        setExistingConfigs(
-          state.recentlyUsed[storeKey] as { name: string; config: Configs }[]
-        );
-      }
-    });
-  }, [storeKey]);
-
+  // The view normalizes what it loads (older presets lack newer fields, or kept empty values),
+  // so compare against the config as the view rebuilt it right after loading.
+  const [baseline, setBaseline] = useState<{ name: string; config: Configs } | null>(null);
+  const [loadToken, setLoadToken] = useState(0);
+  const latestConfig = useRef(currentConfig);
+  const loadedName = useRef<string | undefined>(undefined);
   useEffect(() => {
-    loadExistingConfigs();
-  }, [loadExistingConfigs]);
-
+    latestConfig.current = currentConfig;
+  });
   useEffect(() => {
-    if (existingConfigs && existingConfigs.length) {
-      setVscConfig((state) => {
-        const newState = { ...state };
-        (newState.recentlyUsed[storeKey] as {
-          name: string;
-          config: Configs;
-        }[]) = existingConfigs;
-        return newState;
-      });
+    if (loadToken && loadedName.current) {
+      setBaseline({ name: loadedName.current, config: latestConfig.current });
     }
-  }, [existingConfigs, storeKey]);
+  }, [loadToken]);
 
-  const onConfigSave = (name: string | undefined) => {
-    if (!name) {
-      console.error("No selected config name");
-      return;
-    }
+  const hasUnsavedChanges = useMemo(() => {
+    if (!selected) return false;
+    const reference = baseline?.name === selected.name ? baseline.config : selected.config;
+    return !configsEqual(reference, currentConfig);
+  }, [selected, baseline, currentConfig]);
 
-    setLastSavedConfig(currentConfig);
-    setSelectedConfigName(name);
-    setHasUnsavedChanges(false);
-
-    setExistingConfigs((prevConfigs) => {
-      if (!prevConfigs) return [{ name, config: currentConfig }];
-      const existingConfig = prevConfigs.find((config) => config.name === name);
-      if (existingConfig) {
-        existingConfig.config = currentConfig;
-        return [...prevConfigs];
-      }
-      return [{ name, config: currentConfig }, ...prevConfigs];
-    });
+  const save = (name: string) => {
+    update({
+      type: "upsertPreset",
+      storeKey,
+      name,
+      config: JSON.parse(JSON.stringify(currentConfig)),
+    })
+      .then(() => {
+        setSelectedName(name);
+        setBaseline({ name, config: currentConfig });
+      })
+      .catch((error: Error) => logger.error(`Could not save preset: ${error.message}`));
   };
 
-  const deleteConfig = (name: string) => {
-    if (name === selectedConfigName) {
-      setLastSavedConfig(undefined);
-      setSelectedConfigName(undefined);
-    }
-    setExistingConfigs((prevConfigs) =>
-      prevConfigs.filter((config) => config.name !== name)
-    );
+  const remove = (name: string) => {
+    update({ type: "deletePreset", storeKey, name })
+      .then(() => setSelectedName((current) => (current === name ? undefined : current)))
+      .catch((error: Error) => logger.error(`Could not delete preset: ${error.message}`));
   };
 
-  const tempNameExists = existingConfigs.some(
-    (config) => config.name === tempName
-  );
+  const trimmedName = tempName.trim();
+  const tempNameExists = presets.some((p) => p.name === trimmedName);
 
   return (
     <>
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-4">
-        <Select
-          label="Preset Configuration"
-          placeholder="Load a saved configuration"
-          isDisabled={isDisabled}
-          size="sm"
-          className="w-auto flex-grow min-w-40"
-          selectedKeys={
-            selectedConfigName &&
-            existingConfigs
-              .map((config) => config.name)
-              .includes(selectedConfigName)
-              ? [selectedConfigName]
-              : []
-          }
-          disabledKeys={["no-item-available"]}
-          onClick={(open) => open && loadExistingConfigs()}
-          onSelectionChange={(keys) => {
-            const name = Array.from(keys)[0] as string;
-            if (!existingConfigs.map((config) => config.name).includes(name)) {
-              setLastSavedConfig(undefined);
-              setSelectedConfigName(undefined);
-            }
-
-            setSelectedConfigName(name);
-            const selectedConfig = existingConfigs.find(
-              (config) => config.name === name
-            );
-            if (selectedConfig) {
-              setLastSavedConfig(selectedConfig.config);
-              onLoadConfig(selectedConfig.config);
-            }
-          }}
-        >
-          {existingConfigs.length ? (
-            existingConfigs.map((config) => (
-              <SelectItem
-                key={config.name}
-                endContent={
-                  <Button radius="sm"
-                    variant="flat"
-                    color="danger"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.debug("Deleting config:", config.name);
-                      deleteConfig(config.name);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                }
-              >
-                {config.name}
-              </SelectItem>
-            ))
-          ) : (
-            <SelectItem key="no-item-available">
-              No saved configurations
-            </SelectItem>
-          )}
-        </Select>
-        <div className="flex items-center gap-2">
-          <Tooltip content="Save configuration as new entry">
-            <Button radius="sm"
-              variant="bordered"
-              className="capitalize"
-              onClick={() => setShowNameModal(true)}
-              isDisabled={isDisabled}
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <Dropdown isDisabled={isDisabled}>
+          <DropdownTrigger>
+            <Button
+              radius="sm"
               size="sm"
+              variant="bordered"
+              className="flex-grow justify-between min-w-40"
+              endContent={<ChevronDown size={14} />}
+              isDisabled={isDisabled}
             >
-              <Save size={12} />
+              <span className="truncate">
+                {selected ? `Preset: ${selected.name}${hasUnsavedChanges ? " (modified)" : ""}` : "Load a preset"}
+              </span>
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="Saved presets"
+            disabledKeys={presets.length ? [] : ["none"]}
+            onAction={(key) => {
+              const preset = presets.find((p) => p.name === key);
+              if (preset) {
+                setSelectedName(preset.name);
+                onLoadConfig(preset.config);
+                loadedName.current = preset.name;
+                setLoadToken((n) => n + 1);
+              }
+            }}
+          >
+            {presets.length ? (
+              presets.map((preset) => <DropdownItem key={preset.name}>{preset.name}</DropdownItem>)
+            ) : (
+              <DropdownItem key="none">No saved presets</DropdownItem>
+            )}
+          </DropdownMenu>
+        </Dropdown>
+        <div className="flex items-center gap-2">
+          <Tooltip content="Save as a new preset">
+            <Button
+              radius="sm"
+              variant="bordered"
+              size="sm"
+              isIconOnly
+              aria-label="Save as a new preset"
+              onPress={() => {
+                setTempName("");
+                setShowNameModal(true);
+              }}
+              isDisabled={isDisabled}
+            >
+              <Save size={14} />
             </Button>
           </Tooltip>
-
-          {hasUnsavedChanges && (
-            <Tooltip content={`Save changes to ${selectedConfigName}`}>
-              <Button radius="sm"
+          {selected && hasUnsavedChanges && (
+            <Tooltip content={`Save changes to ${selected.name}`}>
+              <Button
+                radius="sm"
                 variant="bordered"
-                className="capitalize"
                 size="sm"
-                onClick={() => onConfigSave(selectedConfigName)}
+                isIconOnly
+                aria-label={`Save changes to ${selected.name}`}
+                onPress={() => save(selected.name)}
                 isDisabled={isDisabled}
               >
-                <RefreshCcw size={16} />
+                <RefreshCcw size={14} />
+              </Button>
+            </Tooltip>
+          )}
+          {selected && (
+            <Tooltip color="danger" content={`Delete ${selected.name}`}>
+              <Button
+                radius="sm"
+                variant="bordered"
+                color="danger"
+                size="sm"
+                isIconOnly
+                aria-label={`Delete preset ${selected.name}`}
+                onPress={() => setShowDeleteModal(true)}
+              >
+                <Trash2 size={14} />
               </Button>
             </Tooltip>
           )}
         </div>
       </div>
-      <Modal
-        isOpen={showNameModal}
-        onOpenChange={setShowNameModal}
-        placement="center"
-      >
+      <Modal isOpen={showNameModal} onOpenChange={setShowNameModal} placement="center">
         <ModalContent>
           {(onClose) => (
-            <>
-              <ModalHeader />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!trimmedName || tempNameExists) return;
+                onClose();
+                save(trimmedName);
+              }}
+            >
+              <ModalHeader>Save preset</ModalHeader>
               <ModalBody>
                 <Input
                   autoFocus
@@ -226,16 +201,35 @@ const ConfigStore = ({
                 <Button radius="sm" color="danger" variant="flat" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button radius="sm"
-                  color="primary"
+                <Button radius="sm" color="primary" type="submit" isDisabled={!trimmedName || tempNameExists}>
+                  Save as new entry
+                </Button>
+              </ModalFooter>
+            </form>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={showDeleteModal} onOpenChange={setShowDeleteModal} placement="center">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Delete preset</ModalHeader>
+              <ModalBody>
+                <p className="text-sm">Delete the preset &quot;{selected?.name}&quot;?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button radius="sm" variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  radius="sm"
+                  color="danger"
                   onPress={() => {
                     onClose();
-                    onConfigSave(tempName);
-                    setTempName("");
+                    if (selected) remove(selected.name);
                   }}
-                  isDisabled={!tempName || tempNameExists}
                 >
-                  Save as new entry
+                  Delete
                 </Button>
               </ModalFooter>
             </>

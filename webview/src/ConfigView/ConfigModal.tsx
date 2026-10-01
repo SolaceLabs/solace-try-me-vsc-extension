@@ -1,15 +1,69 @@
-import { Button, Input } from "@nextui-org/react";
+import { Button, Checkbox, Input, Spinner, Switch } from "@nextui-org/react";
 import { Eye, EyeOff } from "lucide-react";
+import { useRef, useState } from "react";
 
-import {
-  ModalBody,
-  Modal,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from "../Shared/components/Modal";
-import { BrokerConfig } from "../Shared/interfaces";
-import { useEffect, useState } from "react";
+import { ModalBody, Modal, ModalContent, ModalFooter, ModalHeader } from "../Shared/components/Modal";
+import { Accordion, AccordionItem } from "../Shared/components/Accordion";
+import { BrokerConfig, BrokerSessionOptions } from "../Shared/interfaces";
+import { BROKER_FIELD_LIMITS } from "../Shared/constants";
+import { validateBrokerUrl } from "../Shared/brokerValidation";
+import { host } from "../Shared/host";
+import { testConnection, TestConnectionResult } from "../Shared/testConnection";
+import { usePreferences } from "../Shared/components/SettingsContext";
+
+export interface BrokerEdit {
+  broker: BrokerConfig;
+  /** New password to save; undefined keeps the saved one. */
+  password?: string;
+  clearPassword?: boolean;
+}
+
+interface FormState {
+  title: string;
+  url: string;
+  vpn: string;
+  username: string;
+  password: string;
+  savePassword: boolean;
+  clearPassword: boolean;
+  clientName: string;
+  connectTimeout: string;
+  connectRetries: string;
+  reconnectRetries: string;
+  reconnectWait: string;
+  reapplySubscriptions: boolean;
+  forwardLoopbackInRemote: boolean;
+}
+
+const toForm = (config: BrokerConfig | null): FormState => {
+  const options = config?.sessionOptions ?? {};
+  const str = (value: number | undefined) => (value === undefined ? "" : String(value));
+  return {
+    title: config?.title ?? "",
+    url: config?.url ?? "",
+    vpn: config?.vpn ?? "",
+    username: config?.username ?? "",
+    // Saved passwords stay in SecretStorage and are never shown.
+    password: config?.password ?? "",
+    savePassword: config?.savePassword !== false,
+    clearPassword: false,
+    clientName: options.clientName ?? "",
+    connectTimeout: str(options.connectTimeoutInMsecs),
+    connectRetries: str(options.connectRetries),
+    reconnectRetries: str(options.reconnectRetries),
+    reconnectWait: str(options.reconnectRetryWaitInMsecs),
+    reapplySubscriptions: options.reapplySubscriptions !== false,
+    forwardLoopbackInRemote: options.forwardLoopbackInRemote === true,
+  };
+};
+
+const intOrUndefined = (value: string, min: number) => {
+  const trimmed = value.trim();
+  if (!trimmed) return { value: undefined, error: null };
+  const n = Number(trimmed);
+  if (!Number.isInteger(n) || n < min) return { value: undefined, error: `Enter a whole number ≥ ${min}.` };
+  return { value: n, error: null };
+};
 
 const ConfigModal = ({
   show,
@@ -17,78 +71,139 @@ const ConfigModal = ({
   initialConfig,
 }: {
   show: boolean;
-  onClose: (config: BrokerConfig | null) => void;
+  onClose: (edit: BrokerEdit | null) => void;
   initialConfig: BrokerConfig | null;
 }) => {
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [vpn, setVpn] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
+  const { env } = usePreferences();
+  const [form, setForm] = useState<FormState>(() => toForm(initialConfig));
+  const [openedFor, setOpenedFor] = useState<{ show: boolean; config: BrokerConfig | null }>({
+    show,
+    config: initialConfig,
+  });
   const [visiblePassword, setVisiblePassword] = useState(false);
-  const [disableSave, setDisableSave] = useState(true);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
+  // Results of a test started for an earlier dialog are ignored.
+  const testRun = useRef(0);
 
-  useEffect(() => {
-    setTitle(initialConfig?.title || "");
-    setUrl(initialConfig?.url || "");
-    setVpn(initialConfig?.vpn || "");
-    setUsername(initialConfig?.username || "");
-    setPassword(initialConfig?.password || "");
-  }, [initialConfig]);
+  // Start from the config being edited (or an empty form) every time the dialog opens.
+  if (openedFor.show !== show || openedFor.config !== initialConfig) {
+    setOpenedFor({ show, config: initialConfig });
+    testRun.current++;
+    setTesting(false);
+    if (show) {
+      setForm(toForm(initialConfig));
+      setTestResult(null);
+      setVisiblePassword(false);
+    }
+  }
 
-  useEffect(() => {
-    setDisableSave(!title || !url || !vpn || !username);
-  }, [title, url, vpn, username]);
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const isEdit = !!initialConfig?.id;
+  const hasSavedPassword = isEdit && initialConfig?.hasPassword === true;
+
+  const urlError = form.url.trim() ? validateBrokerUrl(form.url) : null;
+  const vpnError = form.vpn.trim().length > BROKER_FIELD_LIMITS.vpn ? `At most ${BROKER_FIELD_LIMITS.vpn} characters.` : null;
+  const userError =
+    form.username.trim().length > BROKER_FIELD_LIMITS.username ? `At most ${BROKER_FIELD_LIMITS.username} characters.` : null;
+  const passwordError =
+    form.password.length > BROKER_FIELD_LIMITS.password ? `At most ${BROKER_FIELD_LIMITS.password} characters.` : null;
+  const clientNameError =
+    form.clientName.trim().length > BROKER_FIELD_LIMITS.clientName ? `At most ${BROKER_FIELD_LIMITS.clientName} characters.` : null;
+  const connectTimeout = intOrUndefined(form.connectTimeout, 100);
+  const connectRetries = intOrUndefined(form.connectRetries, 0);
+  const reconnectRetries = intOrUndefined(form.reconnectRetries, -1);
+  const reconnectWait = intOrUndefined(form.reconnectWait, 0);
+
+  const isInvalid =
+    !form.title.trim() ||
+    !form.url.trim() ||
+    !form.vpn.trim() ||
+    !form.username.trim() ||
+    !!(urlError || vpnError || userError || passwordError || clientNameError) ||
+    !!(connectTimeout.error || connectRetries.error || reconnectRetries.error || reconnectWait.error);
+
+  const buildBroker = (): BrokerConfig => {
+    const sessionOptions: BrokerSessionOptions = {
+      clientName: form.clientName.trim() || undefined,
+      connectTimeoutInMsecs: connectTimeout.value,
+      connectRetries: connectRetries.value,
+      reconnectRetries: reconnectRetries.value,
+      reconnectRetryWaitInMsecs: reconnectWait.value,
+      reapplySubscriptions: form.reapplySubscriptions ? undefined : false,
+      forwardLoopbackInRemote: form.forwardLoopbackInRemote ? true : undefined,
+    };
+    const hasOptions = Object.values(sessionOptions).some((v) => v !== undefined);
+    return {
+      id: initialConfig?.id ?? "",
+      title: form.title.trim(),
+      url: form.url.split(",").map((u) => u.trim()).filter(Boolean).join(","),
+      vpn: form.vpn.trim(),
+      username: form.username.trim(),
+      savePassword: form.savePassword ? undefined : false,
+      sessionOptions: hasOptions ? JSON.parse(JSON.stringify(sessionOptions)) : undefined,
+    };
+  };
+
+  const runTest = async () => {
+    const run = ++testRun.current;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      let password = form.password;
+      if (!password && form.savePassword && hasSavedPassword && !form.clearPassword) {
+        password = (await host.request<string | undefined>("secrets/getBrokerPassword", { id: initialConfig!.id })) ?? "";
+      }
+      const result = await testConnection({ ...buildBroker(), id: initialConfig?.id ?? "test" }, password, env?.remoteName);
+      if (run === testRun.current) setTestResult(result);
+    } finally {
+      if (run === testRun.current) setTesting(false);
+    }
+  };
+
+  const close = () => {
+    setTestResult(null);
+    setVisiblePassword(false);
+    onClose(null);
+  };
 
   return (
-    <Modal
-      isOpen={show}
-      placement="center"
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose(null);
-          setTitle("");
-          setUrl("");
-          setVpn("");
-          setUsername("");
-          setPassword("");
-        }
-      }}
-    >
+    <Modal isOpen={show} placement="center" scrollBehavior="inside" onOpenChange={(open) => !open && close()}>
       <ModalContent>
-        {(onModalClose) => (
+        {() => (
           <>
-            <ModalHeader>
-              Add Solace Broker Configuration
-            </ModalHeader>
+            <ModalHeader>{isEdit ? "Edit Solace Broker Configuration" : "Add Solace Broker Configuration"}</ModalHeader>
             <ModalBody className="flex flex-col gap-4">
+              <Input type="text" label="Title" value={form.title} onValueChange={(v) => set("title", v)} isRequired />
               <Input
                 type="text"
-                label="Title"
-                value={title}
-                onValueChange={setTitle}
-                isRequired
-              />
-              <Input
-                type="url"
                 label="URL"
-                value={url}
-                onValueChange={setUrl}
+                placeholder="ws://localhost:8008"
+                description="Web transport URL. Separate several hosts with commas for failover."
+                value={form.url}
+                onValueChange={(v) => set("url", v)}
+                isInvalid={!!urlError}
+                errorMessage={urlError}
                 isRequired
               />
               <Input
                 type="text"
                 label="Message VPN"
-                value={vpn}
-                onValueChange={setVpn}
+                value={form.vpn}
+                onValueChange={(v) => set("vpn", v)}
+                isInvalid={!!vpnError}
+                errorMessage={vpnError}
                 isRequired
               />
               <Input
                 type="text"
                 label="Username"
-                value={username}
-                onValueChange={setUsername}
+                value={form.username}
+                onValueChange={(v) => set("username", v)}
+                isInvalid={!!userError}
+                errorMessage={userError}
                 isRequired
               />
               <Input
@@ -108,35 +223,157 @@ const ConfigModal = ({
                   </button>
                 }
                 label="Password"
-                value={password}
-                onValueChange={setPassword}
+                placeholder={hasSavedPassword && !form.clearPassword ? "Saved. Leave empty to keep it." : undefined}
+                description={
+                  form.savePassword
+                    ? "Saved in your operating system's keychain via VS Code SecretStorage."
+                    : "Not saved: used for Test connection only. You will be asked for it when connecting."
+                }
+                value={form.password}
+                onValueChange={(v) => set("password", v)}
+                isDisabled={form.savePassword && form.clearPassword}
+                isInvalid={!!passwordError}
+                errorMessage={passwordError}
               />
+              <div className="flex flex-wrap gap-4">
+                <Switch size="sm" isSelected={form.savePassword} onValueChange={(v) => set("savePassword", v)}>
+                  Save password
+                </Switch>
+                {hasSavedPassword && form.savePassword && (
+                  <Checkbox size="sm" isSelected={form.clearPassword} onValueChange={(v) => set("clearPassword", v)}>
+                    Remove saved password
+                  </Checkbox>
+                )}
+              </div>
+              <Accordion isCompact>
+                <AccordionItem key="advanced" aria-label="advanced session settings" subtitle="Advanced session settings">
+                  <div className="flex flex-col gap-3 pl-1">
+                    <Input
+                      size="sm"
+                      label="Client name"
+                      placeholder="try-me-vsc/{role}/{random}"
+                      description="{role} becomes publish or subscribe; {random} keeps names unique."
+                      value={form.clientName}
+                      onValueChange={(v) => set("clientName", v)}
+                      isInvalid={!!clientNameError}
+                      errorMessage={clientNameError}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        size="sm"
+                        type="number"
+                        label="Connect timeout (ms)"
+                        placeholder="10000"
+                        value={form.connectTimeout}
+                        onValueChange={(v) => set("connectTimeout", v)}
+                        isInvalid={!!connectTimeout.error}
+                        errorMessage={connectTimeout.error}
+                      />
+                      <Input
+                        size="sm"
+                        type="number"
+                        label="Connect retries"
+                        placeholder="1"
+                        value={form.connectRetries}
+                        onValueChange={(v) => set("connectRetries", v)}
+                        isInvalid={!!connectRetries.error}
+                        errorMessage={connectRetries.error}
+                      />
+                      <Input
+                        size="sm"
+                        type="number"
+                        label="Reconnect retries"
+                        placeholder="20"
+                        description="-1 retries forever"
+                        value={form.reconnectRetries}
+                        onValueChange={(v) => set("reconnectRetries", v)}
+                        isInvalid={!!reconnectRetries.error}
+                        errorMessage={reconnectRetries.error}
+                      />
+                      <Input
+                        size="sm"
+                        type="number"
+                        label="Reconnect wait (ms)"
+                        placeholder="3000"
+                        value={form.reconnectWait}
+                        onValueChange={(v) => set("reconnectWait", v)}
+                        isInvalid={!!reconnectWait.error}
+                        errorMessage={reconnectWait.error}
+                      />
+                    </div>
+                    <Switch
+                      size="sm"
+                      isSelected={form.reapplySubscriptions}
+                      onValueChange={(v) => set("reapplySubscriptions", v)}
+                    >
+                      Re-apply subscriptions after reconnecting
+                    </Switch>
+                    <Switch
+                      size="sm"
+                      isSelected={form.forwardLoopbackInRemote}
+                      onValueChange={(v) => set("forwardLoopbackInRemote", v)}
+                    >
+                      Forward through VS Code in remote windows
+                    </Switch>
+                    <p className="text-xs text-default-500 -mt-2">
+                      For SSH, WSL, Dev Containers and Codespaces: turn on when the broker runs in the remote
+                      workspace (e.g. ws://localhost:8008 there). Leave off when it runs on this machine.
+                    </p>
+                  </div>
+                </AccordionItem>
+              </Accordion>
+              {testResult && (
+                <div
+                  className={`text-xs rounded-md p-2 ${testResult.ok ? "bg-success-50 text-success-700" : "bg-danger-50 text-danger"}`}
+                  role="status"
+                >
+                  {testResult.ok ? (
+                    <p>
+                      Connected in {testResult.ms} ms
+                      {testResult.info?.routerName ? ` to ${testResult.info.routerName}` : ""}
+                      {testResult.info?.brokerVersion ? ` (${testResult.info.brokerVersion})` : ""}.
+                    </p>
+                  ) : (
+                    <>
+                      <p>{testResult.error}</p>
+                      {testResult.hint && <p className="mt-1 opacity-80">{testResult.hint}</p>}
+                    </>
+                  )}
+                </div>
+              )}
             </ModalBody>
-            <ModalFooter>
-              <Button radius="sm" color="danger" variant="light" onPress={onModalClose}>
+            <ModalFooter className="flex-wrap">
+              <Button
+                radius="sm"
+                variant="bordered"
+                onPress={runTest}
+                isDisabled={isInvalid || testing}
+                startContent={testing ? <Spinner size="sm" color="current" /> : undefined}
+              >
+                Test connection
+              </Button>
+              <div className="flex-grow" />
+              <Button radius="sm" color="danger" variant="light" onPress={close}>
                 Close
               </Button>
-              <Button radius="sm"
+              <Button
+                radius="sm"
                 color="primary"
-                isDisabled={disableSave}
+                isDisabled={isInvalid}
                 onPress={() => {
-                  const newConfig: BrokerConfig = {
-                    id: initialConfig?.id || "",
-                    title,
-                    url,
-                    vpn,
-                    username,
-                    password,
-                  };
-                  onClose(newConfig);
-                  setTitle("");
-                  setUrl("");
-                  setVpn("");
-                  setUsername("");
-                  setPassword("");
+                  const broker = buildBroker();
+                  const edit: BrokerEdit = { broker };
+                  if (form.clearPassword) {
+                    edit.clearPassword = true;
+                  } else if (form.savePassword && (form.password || !hasSavedPassword)) {
+                    edit.password = form.password;
+                  }
+                  setTestResult(null);
+                  setVisiblePassword(false);
+                  onClose(edit);
                 }}
               >
-                {initialConfig?.id ? "Save" : "Create"}
+                {isEdit ? "Save" : "Create"}
               </Button>
             </ModalFooter>
           </>

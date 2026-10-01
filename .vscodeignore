@@ -16,3 +16,4 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 *.vsix
+test/**
