@@ -69,7 +69,21 @@ export interface ConnectionHintContext {
   url: string;
   isDefaultLocalhost: boolean;
   remoteName?: string | null;
+  /** The profile authenticates with a client certificate from the OS certificate store. */
+  clientCertificate?: boolean;
 }
+
+// The broker answers "Untrusted Certificate" both for a rejected certificate and for none at all.
+const CLIENT_CERTIFICATE_LOGIN_HINT =
+  "The broker rejected the client certificate, or none was sent. Check that the certificate and its private key " +
+  "are installed in your operating system's certificate store, that it is signed by a CA the broker trusts for " +
+  "client certificates, and that it has not expired. VS Code sends the first certificate that matches the CAs " +
+  "the broker asks for.";
+
+const CLIENT_CERTIFICATE_TLS_HINT =
+  "Check the URL and the port of the broker's secure web transport (e.g. 443 or 1443), and that your operating " +
+  "system trusts the broker's certificate (self-signed certificates are rejected). The TLS handshake also fails " +
+  "when the client certificate's private key cannot be used, e.g. when access to it was denied.";
 
 /** Suggests what to check for a failed or lost connection. */
 export function connectionHint(error: unknown, context: ConnectionHintContext): string | undefined {
@@ -82,7 +96,11 @@ export function connectionHint(error: unknown, context: ConnectionHintContext): 
   }
   switch (subcode) {
     case Sub.LOGIN_FAILURE:
-      return "Check the username and password of the broker profile.";
+      return context.clientCertificate
+        ? CLIENT_CERTIFICATE_LOGIN_HINT
+        : "Check the username and password of the broker profile.";
+    case Sub.CLIENT_CERTIFICATE_AUTHENTICATION_IS_SHUTDOWN:
+      return "Client certificate authentication is not enabled on this Message VPN. Enable it on the broker, or switch the profile to username and password.";
     case Sub.MESSAGE_VPN_NOT_ALLOWED:
     case Sub.MESSAGE_VPN_UNAVAILABLE:
       return "Check the Message VPN name, and that the VPN is enabled.";
@@ -106,7 +124,9 @@ export function connectionHint(error: unknown, context: ConnectionHintContext): 
         "In remote windows the connection opens from your local machine. If the broker runs in the remote workspace, turn on \"Forward through VS Code in remote windows\" in the broker profile's advanced settings."
       );
     }
-    if (urls.some((u) => u.startsWith("wss://") || u.startsWith("https://"))) {
+    if (context.clientCertificate) {
+      hints.push(CLIENT_CERTIFICATE_TLS_HINT);
+    } else if (urls.some((u) => u.startsWith("wss://") || u.startsWith("https://"))) {
       hints.push("For TLS, the broker certificate must be trusted by your operating system. Self-signed certificates are rejected by the webview.");
     }
     if (!hints.length) {

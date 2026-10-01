@@ -9,7 +9,7 @@ import {
   TableCell,
   Tooltip,
 } from "@nextui-org/react";
-import { Pencil, Trash2, RefreshCcw, Settings, KeyRound } from "lucide-react";
+import { Pencil, Trash2, RefreshCcw, Settings, KeyRound, FileBadge } from "lucide-react";
 
 import { BrokerConfig } from "../Shared/interfaces";
 import ConfigModal, { BrokerEdit } from "./ConfigModal";
@@ -117,15 +117,24 @@ const ConfigView = () => {
               <TableCell>
                 <span className="flex items-center gap-1">
                   {broker.title}
-                  {broker.savePassword === false && (
+                  {broker.authScheme === "clientCertificate" ? (
+                    <Tooltip content="Authenticates with a client certificate from the OS certificate store">
+                      <FileBadge size={12} className="text-default-400" />
+                    </Tooltip>
+                  ) : broker.savePassword === false ? (
                     <Tooltip content="Asks for the password when connecting">
                       <KeyRound size={12} className="text-default-400" />
                     </Tooltip>
-                  )}
+                  ) : null}
                 </span>
               </TableCell>
               <TableCell>{broker.vpn}</TableCell>
-              <TableCell>{broker.username}</TableCell>
+              <TableCell>
+                {broker.username ||
+                  (broker.authScheme === "clientCertificate" && (
+                    <span className="text-default-400">From certificate</span>
+                  ))}
+              </TableCell>
               <TableCell className="flex gap-2">
                 <Tooltip content="Edit Broker Config">
                   <Button

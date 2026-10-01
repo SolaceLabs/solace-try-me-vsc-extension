@@ -219,3 +219,38 @@ test("first run seeds the default localhost broker", async () => {
     assert.strictEqual(await store.getPassword("default_localhost"), "default");
   }
 });
+
+test("profiles without authScheme round-trip unchanged, and client certificate profiles keep it", async () => {
+  const ctx = makeContext(LEGACY);
+  const store = activate(ctx, "session-1");
+  const before = (await store.get()).brokerConfigs[1];
+  assert.ok(!("authScheme" in before));
+  await store.update({ type: "upsertBroker", broker: before });
+  assert.deepStrictEqual((await store.get()).brokerConfigs[1], before);
+  assert.strictEqual(await store.getPassword("4821"), "s3cret!");
+
+  // A new client certificate profile: no username and no password.
+  const cert = { id: "cc", title: "mTLS", url: "wss://broker:443", vpn: "prod", username: "", authScheme: "clientCertificate" };
+  await store.update({ type: "upsertBroker", broker: cert });
+  await store.update({ type: "upsertBroker", broker: { ...cert, title: "mTLS 2" } });
+  let saved = (await store.get()).brokerConfigs.find((b) => b.id === "cc");
+  assert.deepStrictEqual(saved, { ...cert, title: "mTLS 2", hasPassword: false });
+  assert.strictEqual(await store.getPassword("cc"), undefined);
+
+  // Switching a password profile to a client certificate removes its saved password (the webview sends clearPassword).
+  await store.update({ type: "upsertBroker", broker: { ...before, authScheme: "clientCertificate" }, clearPassword: true });
+  saved = (await store.get()).brokerConfigs[1];
+  assert.strictEqual(saved.authScheme, "clientCertificate");
+  assert.strictEqual(saved.hasPassword, false);
+  assert.strictEqual(await store.getPassword("4821"), undefined);
+  assert.ok(!JSON.stringify(stored(ctx)).includes("s3cret"), "password kept for a client certificate profile");
+
+  // The scheme survives a restart, and switching back to basic (authScheme omitted) drops it.
+  const restarted = activate(ctx, "session-2");
+  assert.strictEqual((await restarted.get()).brokerConfigs.find((b) => b.id === "cc").authScheme, "clientCertificate");
+  const { authScheme: _scheme, ...basic } = (await restarted.get()).brokerConfigs[1];
+  await restarted.update({ type: "upsertBroker", broker: basic, password: "n3w" });
+  saved = (await restarted.get()).brokerConfigs[1];
+  assert.ok(!("authScheme" in saved));
+  assert.strictEqual(await restarted.getPassword("4821"), "n3w");
+});

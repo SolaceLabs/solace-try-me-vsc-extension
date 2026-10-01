@@ -38,7 +38,13 @@ const CLICK_GUARD_MS = 400;
 
 const sessionOptionsKey = (broker?: BrokerConfig) =>
   broker
-    ? JSON.stringify([broker.url, broker.vpn, broker.username, broker.sessionOptions ?? null])
+    ? JSON.stringify([
+        broker.url,
+        broker.vpn,
+        broker.username,
+        broker.authScheme ?? "basic",
+        broker.sessionOptions ?? null,
+      ])
     : "";
 
 const ConnectionManager = ({
@@ -137,7 +143,10 @@ const ConnectionManager = ({
     setPreparing(true);
     try {
       let password: string | null | undefined;
-      if (selected.savePassword === false) {
+      if (selected.authScheme === "clientCertificate") {
+        // The certificate from the OS store replaces the password.
+        password = "";
+      } else if (selected.savePassword === false) {
         password = promptedPasswords.current.get(selected.id) ?? (await askPassword(selected));
         if (password === null || cancelled()) return;
         promptedPasswords.current.set(selected.id, password);
