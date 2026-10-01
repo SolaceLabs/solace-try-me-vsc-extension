@@ -3,7 +3,7 @@
 import type {Variants} from "framer-motion";
 
 import {forwardRef} from "@nextui-org/system";
-import {useMemo, ReactNode} from "react";
+import React, {useMemo, ReactNode} from "react";
 import {ChevronIcon} from "@nextui-org/shared-icons";
 import {AnimatePresence, LazyMotion, domAnimation, m, useWillChange} from "framer-motion";
 import {TRANSITION_VARIANTS} from "@nextui-org/framer-utils";
@@ -12,6 +12,25 @@ import {UseAccordionItemProps, useAccordionItem} from "./useAccordionItem";
 
 
 export interface AccordionItemProps extends UseAccordionItemProps {}
+
+// The accordion root handles these keys for keyboard navigation between items. Stop them
+// at the content so arrow/Home/End keys keep working in inputs and Escape does not collapse
+// every panel. Other keys (Ctrl+C/V/A) still reach VS Code.
+const NAVIGATION_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+  "Escape",
+]);
+
+const stopNavigationKeys = (e: React.KeyboardEvent) => {
+  if (NAVIGATION_KEYS.has(e.key)) e.stopPropagation();
+};
 
 const AccordionItem = forwardRef<"button", AccordionItemProps>((props, ref) => {
   const {
@@ -55,7 +74,11 @@ const AccordionItem = forwardRef<"button", AccordionItemProps>((props, ref) => {
 
   const content = useMemo(() => {
     if (disableAnimation) {
-      return <div {...getContentProps()}>{children}</div>;
+      return (
+        <div onKeyDown={stopNavigationKeys}>
+          <div {...getContentProps()}>{children}</div>
+        </div>
+      );
     }
 
     const transitionVariants: Variants = {
@@ -73,6 +96,7 @@ const AccordionItem = forwardRef<"button", AccordionItemProps>((props, ref) => {
           style={{willChange}}
           variants={transitionVariants}
           {...motionProps}
+          onKeyDown={stopNavigationKeys}
         >
           <div {...getContentProps()}>{children}</div>
         </m.section>
@@ -89,6 +113,7 @@ const AccordionItem = forwardRef<"button", AccordionItemProps>((props, ref) => {
               style={{willChange}}
               variants={transitionVariants}
               {...motionProps}
+              onKeyDown={stopNavigationKeys}
             >
               <div {...getContentProps()}>{children}</div>
             </m.section>

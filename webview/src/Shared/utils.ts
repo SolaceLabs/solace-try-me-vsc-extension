@@ -1,110 +1,42 @@
-import { VSC_CONFIG_DEFAULT } from "./constants";
-import { BrokerConfig, VscConfigInterface, VsCodeApi } from "./interfaces";
 import solace from "solclientjs";
+import { host } from "./host";
+import { logger } from "./logger";
 
-declare function acquireVsCodeApi(): VsCodeApi;
+export type Milestone = "connected" | "subscribed" | "published" | "openedMessage";
 
-let runningInBrowser = false;
+/** Lets the Getting Started walkthrough tick off its steps. */
+export function reportMilestone(name: Milestone) {
+  host.post("milestone", { name });
+}
 
-export const initializeVscConfig = () => {
-  try {
-    return acquireVsCodeApi();
-  } catch {
-    return (function () {
-      // For browser testing
-      console.info("Using mock vscode API");
-      runningInBrowser = true;
-      const lsKey = "vscConfig";
-      const vscSimulator: VsCodeApi = {
-        getState: () =>
-          localStorage.getItem(lsKey)
-            ? JSON.parse(localStorage.getItem(lsKey) as string)
-            : VSC_CONFIG_DEFAULT,
-        setState: (state: VscConfigInterface) => {
-          localStorage.setItem(lsKey, JSON.stringify(state));
-        },
-        postMessage: (message: { [key: string]: unknown }) => {
-          console.log("Message from webview", message);
-        },
-      };
-      return vscSimulator;
-    })();
-  }
-};
-
-export const vscode = initializeVscConfig();
-
+/** Opens content in a VS Code editor. The host decides whether to save it to disk. */
 export function openFileInNewTab(
-  file: string,
-  baseFilePath: string = "",
-  id: string = Date.now().toString(),
-  language = "json"
+  content: string,
+  options: { id?: string; language?: "json" | "xml" | "plaintext"; untitled?: boolean } = {}
 ) {
-  const data: {
-    [key: string]: unknown;
-  } = {
-    command: "openInNewTab",
-    content: file,
-    language: language,
-  };
-
-  if (baseFilePath) {
-    data["filePath"] = baseFilePath;
-    data["fileName"] = `solace-try-me-${id}.${language}`;
-  }
-  vscode.postMessage(data);
+  host
+    .request("file/open", {
+      content,
+      id: options.id ?? Date.now().toString(),
+      language: options.language ?? "json",
+      untitled: options.untitled ?? false,
+    })
+    .catch((error: Error) => logger.error(`Could not open the message: ${error.message}`));
 }
 
-export function getVscConfig() {
-  if (runningInBrowser) {
-    return Promise.resolve(vscode.getState() || VSC_CONFIG_DEFAULT);
-  }
-  return new Promise<VscConfigInterface>((resolve) => {
-    const listener = (event: MessageEvent) => {
-      const message = event.data;
-      if (message.command === "getPreferences/response") {
-        window.removeEventListener("message", listener);
-        if (!message.preferences) {
-          resolve(VSC_CONFIG_DEFAULT);
-        }
-        resolve(message.preferences);
-      }
-    };
-    window.addEventListener("message", listener);
-    vscode.postMessage({ command: "getPreferences" });
-  });
+export function copyToClipboard(text: string) {
+  return host.request("clipboard/write", { text });
 }
 
-export async function setVscConfig(
-  updateStateCB: (state: VscConfigInterface) => VscConfigInterface
-) {
-  const currentState = await getVscConfig();
-  const newState = updateStateCB(currentState);
-  if (runningInBrowser) {
-    vscode.setState(newState);
-  } else {
-    vscode.postMessage({
-      command: "savePreferences",
-      preferences: newState,
-    });
-  }
-}
-
-export function compareBrokerConfigs(a: BrokerConfig, b: BrokerConfig) {
-  return (
-    a.id === b.id &&
-    a.title === b.title &&
-    a.url === b.url &&
-    a.vpn === b.vpn &&
-    a.username === b.username &&
-    a.password === b.password
-  );
-}
+/** JSON round-trip drops undefined values, so compare stored and in-memory configs that way. */
+export const normalizeForCompare = (value: unknown) =>
+  value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
 export const deepCompareObjects = (a: unknown, b: unknown): boolean => {
   if (a === b) return true;
   if (a == null || b == null) return false;
   if (typeof a !== "object" || typeof b !== "object") return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
@@ -121,6 +53,9 @@ export const deepCompareObjects = (a: unknown, b: unknown): boolean => {
   }
   return true;
 };
+
+export const configsEqual = (a: unknown, b: unknown) =>
+  deepCompareObjects(normalizeForCompare(a), normalizeForCompare(b));
 
 export function formatDate(date: Date | number, compactMode = false): string {
   if (typeof date === "number") {
@@ -160,7 +95,32 @@ export const convertTypeToString = (type: solace.SDTFieldType) => {
     case solace.SDTFieldType.FLOATTYPE:
     case solace.SDTFieldType.DOUBLETYPE:
       return "Float";
+    case solace.SDTFieldType.BYTEARRAY:
+      return "Bytes";
+    case solace.SDTFieldType.MAP:
+      return "Map";
+    case solace.SDTFieldType.STREAM:
+      return "Stream";
+    case solace.SDTFieldType.DESTINATION:
+      return "Destination";
+    case solace.SDTFieldType.NULLTYPE:
+      return "Null";
     default:
       return "Unknown";
   }
 };
+
+/** Display text for a user property or nested SDT value. */
+export function formatPropertyValue(value: unknown): string {
+  if (value === null || value === undefined) return String(value);
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+export const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Clamps a number into [min, max]; NaN and non-finite values become the fallback. */
+export function clampNumber(value: number, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(value, min), max);
+}

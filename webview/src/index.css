@@ -14,7 +14,9 @@ body {
 }
 
 .vscode-dark,
-.vscode-light {
+.vscode-light,
+.vscode-high-contrast,
+.vscode-high-contrast-light {
   --nextui-background: var(--vscode-panel-background);
   --nextui-background-secondary: var(--vscode-editor-background);
   --nextui-foreground: var(--vscode-panel-foreground);
@@ -22,7 +24,10 @@ body {
 }
 
 
-body.vscode-dark, body.vscode-light {
+body.vscode-dark,
+body.vscode-light,
+body.vscode-high-contrast,
+body.vscode-high-contrast-light {
   background-color: var(--nextui-background);
   color: var(--nextui-foreground);
   font-family: var(--vscode-editor-font-family);

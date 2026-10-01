@@ -1,5 +1,4 @@
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   RadioGroup,
   Radio,
@@ -19,16 +18,11 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import solace from "solclientjs";
 
-import {
-  ModalBody,
-  Modal,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from "../Shared/components/Modal";
+import { ModalBody, Modal, ModalContent, ModalFooter, ModalHeader } from "../Shared/components/Modal";
 import { Accordion, AccordionItem } from "../Shared/components/Accordion";
 import { UserPropertiesMap } from "../Shared/interfaces";
-import { convertTypeToString } from "../Shared/utils";
+import { convertTypeToString, formatPropertyValue } from "../Shared/utils";
+import { isFloatType, isIntegerType, validateUserPropertyValue } from "../Shared/messageCodec";
 
 type UserPropertiesProps = {
   userProperties: UserPropertiesMap;
@@ -36,131 +30,110 @@ type UserPropertiesProps = {
   disablePage?: boolean;
 };
 
-const getValueInput = (
-  type: solace.SDTFieldType,
-  value: unknown,
-  setValue: (value: unknown) => void
-) => {
-  switch (type) {
-    case solace.SDTFieldType.BOOL:
-      return (
-        <RadioGroup
-          value={String(value ?? "false")}
-          onChange={(e) => setValue(e.target.value === "true")}
-        >
-          <Radio value={"true"}>True</Radio>
-          <Radio value={"false"}>False</Radio>
-        </RadioGroup>
-      );
-    case solace.SDTFieldType.INT8:
-    case solace.SDTFieldType.INT16:
-    case solace.SDTFieldType.INT32:
-    case solace.SDTFieldType.INT64:
-    case solace.SDTFieldType.UINT8:
-    case solace.SDTFieldType.UINT16:
-    case solace.SDTFieldType.UINT32:
-    case solace.SDTFieldType.UINT64:
-      return (
-        <Input
-          type="number"
-          label="Value"
-          placeholder="Enter value"
-          step={1}
-          value={(value as string) ?? "0"}
-          onChange={(e) => setValue(Math.floor(Number(e.target.value)))}
-        />
-      );
-    case solace.SDTFieldType.FLOATTYPE:
-    case solace.SDTFieldType.DOUBLETYPE:
-      return (
-        <Input
-          type="number"
-          label="Value"
-          placeholder="Enter value"
-          step={0.01}
-          value={(value as string) ?? "0"}
-          onChange={(e) => setValue(Number(e.target.value))}
-        />
-      );
-    case solace.SDTFieldType.WCHAR:
-    case solace.SDTFieldType.STRING:
-      return (
-        <Textarea
-          label="Value"
-          placeholder="Enter value"
-          value={(value as string) ?? ""}
-          onChange={(e) => setValue(e.target.value)}
-        />
-      );
-    default:
-      return <></>;
-  }
+// The four types offered in the editor. Float is sent as a 64-bit double.
+const EDITABLE_TYPES = [
+  solace.SDTFieldType.STRING,
+  solace.SDTFieldType.INT64,
+  solace.SDTFieldType.DOUBLETYPE,
+  solace.SDTFieldType.BOOL,
+];
+
+const editorType = (type: solace.SDTFieldType) =>
+  isIntegerType(type)
+    ? solace.SDTFieldType.INT64
+    : isFloatType(type)
+    ? solace.SDTFieldType.DOUBLETYPE
+    : type === solace.SDTFieldType.BOOL
+    ? solace.SDTFieldType.BOOL
+    : solace.SDTFieldType.STRING;
+
+interface WipProperty {
+  key: string;
+  type: solace.SDTFieldType;
+  /** Raw text while editing; parsed on save. */
+  text: string;
+}
+
+const emptyProperty: WipProperty = { key: "", type: solace.SDTFieldType.STRING, text: "" };
+
+const parseValue = (type: solace.SDTFieldType, text: string): unknown => {
+  if (type === solace.SDTFieldType.BOOL) return text === "true";
+  if (isIntegerType(type) || isFloatType(type)) return text.trim() === "" ? NaN : Number(text);
+  return text;
 };
 
-const UserProperties = ({
-  userProperties,
-  setUserProperties,
-  disablePage = false,
-}: UserPropertiesProps) => {
-  const [openUserProperties, setOpenUserProperties] = useState(
-    () => Object.keys(userProperties).length > 0
-  );
+const getValueInput = (type: solace.SDTFieldType, text: string, setText: (value: string) => void, error: string | null) => {
+  if (type === solace.SDTFieldType.BOOL) {
+    return (
+      <RadioGroup value={text === "true" ? "true" : "false"} onValueChange={setText}>
+        <Radio value="true">True</Radio>
+        <Radio value="false">False</Radio>
+      </RadioGroup>
+    );
+  }
+  if (isIntegerType(type) || isFloatType(type)) {
+    return (
+      <Input
+        // Text input: a number input drops a leading "-" while typing.
+        type="text"
+        inputMode={isIntegerType(type) ? "numeric" : "decimal"}
+        label="Value"
+        placeholder={isIntegerType(type) ? "e.g. -42" : "e.g. 3.14"}
+        value={text}
+        onValueChange={setText}
+        isInvalid={!!error}
+        errorMessage={error}
+      />
+    );
+  }
+  return <Textarea label="Value" placeholder="Enter value" value={text} onValueChange={setText} />;
+};
+
+const UserProperties = ({ userProperties, setUserProperties, disablePage = false }: UserPropertiesProps) => {
+  const hasProperties = Object.keys(userProperties).length > 0;
+  const [manuallyOpen, setManuallyOpen] = useState<boolean | null>(null);
+  const [hadProperties, setHadProperties] = useState(hasProperties);
+  // Follow the property list (e.g. a loaded preset) until the user toggles the section.
+  if (hadProperties !== hasProperties) {
+    setHadProperties(hasProperties);
+    setManuallyOpen(null);
+  }
+  const openUserProperties = manuallyOpen ?? hasProperties;
   const [showModal, setShowModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
-  const [wipProperty, setWipProperty] = useState<{
-    key: string;
-    type: solace.SDTFieldType;
-    value: unknown;
-  }>({
-    key: "",
-    type: solace.SDTFieldType.STRING,
-    value: undefined,
-  });
+  const [wip, setWip] = useState<WipProperty>(emptyProperty);
 
-  useEffect(() => {
-    setOpenUserProperties(() => Object.keys(userProperties).length > 0);
-  }, [userProperties]);
-
-  useEffect(() => {
-    if (selectedProperty) {
-      const { type, value } = userProperties[selectedProperty];
-      setWipProperty({ key: selectedProperty, type, value });
+  const openEditor = (key: string | null) => {
+    setSelectedProperty(key);
+    if (key && userProperties[key]) {
+      const { type, value } = userProperties[key];
+      const t = editorType(type);
+      setWip({ key, type: t, text: t === solace.SDTFieldType.BOOL ? String(value === true) : formatPropertyValue(value) });
+    } else {
+      setWip(emptyProperty);
     }
-  }, [selectedProperty, userProperties]);
+    setShowModal(true);
+  };
 
-  const wipKeyExists =
-    wipProperty.key !== selectedProperty &&
-    Object.keys(userProperties).includes(wipProperty.key);
-
-  const disabledCreateButton =
-    !wipProperty.key || wipProperty.value === undefined || wipKeyExists;
+  const trimmedKey = wip.key.trim();
+  const wipKeyExists = trimmedKey !== selectedProperty && Object.keys(userProperties).includes(trimmedKey);
+  const value = parseValue(wip.type, wip.text);
+  const valueError =
+    (isIntegerType(wip.type) || isFloatType(wip.type)) && wip.text.trim() === ""
+      ? null
+      : validateUserPropertyValue(wip.type, value);
+  const missingValue = (isIntegerType(wip.type) || isFloatType(wip.type)) && wip.text.trim() === "";
+  const disabledCreateButton = !trimmedKey || wipKeyExists || !!valueError || missingValue;
 
   return (
     <Accordion
       isCompact
       selectedKeys={openUserProperties ? ["user-properties"] : []}
-      onSelectionChange={(selectedKeys) => {
-        if (Array.from(selectedKeys).length) {
-          setOpenUserProperties(true);
-        } else {
-          setOpenUserProperties(false);
-        }
-      }}
+      onSelectionChange={(selectedKeys) => setManuallyOpen(Array.from(selectedKeys).length > 0)}
     >
-      <AccordionItem
-        key="user-properties"
-        aria-label="user-properties"
-        subtitle="User Properties"
-      >
+      <AccordionItem key="user-properties" aria-label="user-properties" subtitle="User Properties">
         <div className="flex flex-col gap-4 pl-2">
-          <Button radius="sm"
-            size="sm"
-            isDisabled={disablePage}
-            onClick={() => {
-              setSelectedProperty(null);
-              setShowModal(true);
-            }}
-          >
+          <Button radius="sm" size="sm" isDisabled={disablePage} onPress={() => openEditor(null)}>
             New Property
           </Button>
           <Modal
@@ -170,11 +143,7 @@ const UserProperties = ({
               if (!open) {
                 setShowModal(false);
                 setSelectedProperty(null);
-                setWipProperty({
-                  key: "",
-                  type: solace.SDTFieldType.STRING,
-                  value: undefined,
-                });
+                setWip(emptyProperty);
               }
             }}
           >
@@ -182,7 +151,7 @@ const UserProperties = ({
               {(onModalClose) => (
                 <>
                   <ModalHeader className="flex flex-col gap-1">
-                    Add User Property
+                    {selectedProperty ? "Edit User Property" : "Add User Property"}
                   </ModalHeader>
                   <ModalBody>
                     <Input
@@ -191,107 +160,49 @@ const UserProperties = ({
                       placeholder="Enter key"
                       isInvalid={wipKeyExists}
                       errorMessage="Key must be unique"
-                      value={wipProperty.key}
-                      onChange={(e) =>
-                        setWipProperty((prev) => ({
-                          ...prev,
-                          key: e.target.value,
-                        }))
-                      }
+                      value={wip.key}
+                      onValueChange={(key) => setWip((prev) => ({ ...prev, key }))}
                     />
                     <Select
                       label="Value Type"
                       variant="bordered"
                       placeholder="Select a value type"
-                      selectedKeys={[wipProperty.type.toString()]}
+                      selectedKeys={[wip.type.toString()]}
+                      disallowEmptySelection
                       className="max-w-xs"
                       onSelectionChange={(selected) => {
-                        if ((selected as Set<string>).size === 0) return;
-                        const newType = Number(
-                          Array.from(selected)[0]
-                        ) as solace.SDTFieldType;
-
-                        setWipProperty((prev) => ({
+                        const key = Array.from(selected)[0];
+                        if (key === undefined) return;
+                        const type = Number(key) as solace.SDTFieldType;
+                        setWip((prev) => ({
                           ...prev,
-                          value:
-                            newType === solace.SDTFieldType.BOOL
-                              ? false
-                              : newType === solace.SDTFieldType.STRING
-                              ? undefined
-                              : 0,
-                          type: newType,
+                          type,
+                          text: type === solace.SDTFieldType.BOOL ? "false" : type === solace.SDTFieldType.STRING ? prev.text : "",
                         }));
                       }}
                     >
-                      <SelectItem
-                        key={solace.SDTFieldType.STRING}
-                        value={solace.SDTFieldType.STRING}
-                      >
-                        {convertTypeToString(solace.SDTFieldType.STRING)}
-                      </SelectItem>
-                      <SelectItem
-                        key={solace.SDTFieldType.INT64}
-                        value={solace.SDTFieldType.INT64}
-                      >
-                        {convertTypeToString(solace.SDTFieldType.INT64)}
-                      </SelectItem>
-                      <SelectItem
-                        key={solace.SDTFieldType.FLOATTYPE}
-                        value={solace.SDTFieldType.FLOATTYPE}
-                      >
-                        {convertTypeToString(solace.SDTFieldType.FLOATTYPE)}
-                      </SelectItem>
-                      <SelectItem
-                        key={solace.SDTFieldType.BOOL}
-                        value={solace.SDTFieldType.BOOL}
-                      >
-                        {convertTypeToString(solace.SDTFieldType.BOOL)}
-                      </SelectItem>
+                      {EDITABLE_TYPES.map((type) => (
+                        <SelectItem key={type.toString()}>{convertTypeToString(type)}</SelectItem>
+                      ))}
                     </Select>
-                    {getValueInput(
-                      wipProperty.type,
-                      wipProperty.value,
-                      (value: unknown) => {
-                        setWipProperty((prev) => ({
-                          ...prev,
-                          value,
-                        }));
-                      }
-                    )}
+                    {getValueInput(wip.type, wip.text, (text) => setWip((prev) => ({ ...prev, text })), valueError)}
                   </ModalBody>
                   <ModalFooter>
-                    <Button radius="sm"
-                      color="danger"
-                      variant="light"
-                      onPress={() => {
-                        onModalClose();
-                      }}
-                    >
+                    <Button radius="sm" color="danger" variant="light" onPress={onModalClose}>
                       Close
                     </Button>
-                    <Button radius="sm"
+                    <Button
+                      radius="sm"
                       color="primary"
                       isDisabled={disabledCreateButton}
                       onPress={() => {
-                        if (selectedProperty) {
-                          setUserProperties((prev) => {
-                            const newProps = { ...prev };
-                            delete newProps[selectedProperty];
-                            newProps[wipProperty.key] = {
-                              type: wipProperty.type,
-                              value: wipProperty.value,
-                            };
-                            return newProps;
-                          });
-                        } else {
-                          setUserProperties((prev) => ({
-                            ...prev,
-                            [wipProperty.key]: {
-                              type: wipProperty.type,
-                              value: wipProperty.value,
-                            },
-                          }));
-                        }
+                        setUserProperties((prev) => {
+                          const next = { ...prev };
+                          if (selectedProperty) delete next[selectedProperty];
+                          next[trimmedKey] = { type: wip.type, value };
+                          return next;
+                        });
+                        setManuallyOpen(true);
                         onModalClose();
                       }}
                     >
@@ -303,7 +214,7 @@ const UserProperties = ({
             </ModalContent>
           </Modal>
           <Table
-            aria-label="Broker Configurations List"
+            aria-label="User properties"
             classNames={{
               base: "max-h-[300px] overflow-y-auto",
             }}
@@ -319,41 +230,40 @@ const UserProperties = ({
             <TableBody emptyContent={"No rows to display."}>
               {Object.entries(userProperties).map(([key, { type, value }]) => (
                 <TableRow key={key}>
-                  <TableCell className="max-w-16 text-nowrap text-ellipsis overflow-hidden ...">
-                    {key}
-                  </TableCell>
+                  <TableCell className="max-w-16 text-nowrap text-ellipsis overflow-hidden ...">{key}</TableCell>
                   <TableCell>{convertTypeToString(type)}</TableCell>
                   <TableCell className="max-w-16 text-nowrap text-ellipsis overflow-hidden ...">
-                    {String(value)}
+                    {formatPropertyValue(value)}
                   </TableCell>
                   <TableCell className="flex gap-2">
-                    <Tooltip content="Edit Broker Config">
-                      <Button radius="sm"
+                    <Tooltip content="Edit property">
+                      <Button
+                        radius="sm"
                         isIconOnly
                         className="text-default-400 active:opacity-50"
                         isDisabled={disablePage}
                         size="sm"
                         variant="light"
-                        onClick={() => {
-                          setSelectedProperty(key);
-                          setShowModal(true);
-                        }}
+                        aria-label={`Edit ${key}`}
+                        onPress={() => openEditor(key)}
                       >
                         <Pencil />
                       </Button>
                     </Tooltip>
-                    <Tooltip color="danger" content="Delete Broker Config">
-                      <Button radius="sm"
+                    <Tooltip color="danger" content="Delete property">
+                      <Button
+                        radius="sm"
                         isIconOnly
                         isDisabled={disablePage}
                         size="sm"
                         variant="light"
                         className="text-danger active:opacity-50"
-                        onClick={() => {
+                        aria-label={`Delete ${key}`}
+                        onPress={() => {
                           setUserProperties((prev) => {
-                            const newProps = { ...prev };
-                            delete newProps[key];
-                            return newProps;
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
                           });
                         }}
                       >

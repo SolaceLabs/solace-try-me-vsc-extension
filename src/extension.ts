@@ -1,164 +1,131 @@
-import path from "path";
+import { createHash } from "crypto";
 import * as vscode from "vscode";
+import { ConnectionTracker } from "./connections";
+import { PreferencesStore } from "./preferencesStore";
+import { LogBuffer, PANEL_VIEW_TYPE, SIDE_VIEW_ID, WebviewHost } from "./webviewHost";
 
-const openTabs = new Set();
+const WALKTHROUGH_ID = "solace-tools.solace-try-me-vsc-extension#solaceTryMe.gettingStarted";
+const LOCAL_BROKER_COMMAND =
+  "docker run -d -p 8080:8080 -p 55555:55555 -p 8008:8008 -p 1883:1883 -p 5672:5672 -p 9000:9000 " +
+  "--shm-size=1g --env username_admin_globalaccesslevel=admin --env username_admin_password=admin " +
+  "--name=solace solace/solace-pubsub-standard";
 
 export function activate(context: vscode.ExtensionContext) {
-  // Register the webview view provider
+  const log = vscode.window.createOutputChannel("Solace Try Me", { log: true });
+  const logBuffer = new LogBuffer();
+  const preferences = new PreferencesStore(context, log, {
+    sessionId: vscode.env.sessionId,
+    // globalStorageUri differs per VS Code profile; SecretStorage is shared by all profiles.
+    secretNamespace: createHash("sha256").update(context.globalStorageUri.toString()).digest("hex").slice(0, 12),
+  });
+  const connections = new ConnectionTracker(
+    log,
+    () => preferences.getSettings().showDisconnectNotifications !== false
+  );
+  const host = new WebviewHost(context, log, logBuffer, preferences, connections);
+  context.subscriptions.push(log, preferences, connections);
+
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      "solaceTryMeVscExtension.sideView",
-      new SolaceTryMeViewProvider(context),
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        },
+    vscode.window.registerWebviewViewProvider(SIDE_VIEW_ID, host, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+    vscode.window.registerWebviewPanelSerializer(PANEL_VIEW_TYPE, host),
+
+    vscode.commands.registerCommand("solaceTryMeVscExtension.newWindow", () => host.openPanel()),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.showLogs", () => log.show()),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.openGettingStarted", () =>
+      vscode.commands.executeCommand("workbench.action.openWalkthrough", WALKTHROUGH_ID, false)
+    ),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.startLocalBroker", () => {
+      const terminal = vscode.window.createTerminal({ name: "Solace broker" });
+      terminal.show();
+      terminal.sendText(LOCAL_BROKER_COMMAND);
+    }),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.disconnectAll", () =>
+      host.broadcast("connection/command", { action: "disconnect" })
+    ),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.showConnections", async () => {
+      const sessions = connections.list().filter((s) => s.status !== "disconnected");
+      type Item = vscode.QuickPickItem & { viewId?: string; disconnectAll?: boolean };
+      const items: Item[] = sessions.map((s) => ({
+        label: `$(${s.status === "connected" ? "plug" : "sync"}) ${s.role === "publish" ? "Publish" : "Subscribe"} · ${s.brokerTitle ?? "?"}`,
+        description: s.viewLabel,
+        detail: [s.status, s.clientName, s.topics ? `${s.topics} topic(s)` : "", s.consumer ?? ""]
+          .filter(Boolean)
+          .join(" · "),
+        viewId: s.viewId,
+      }));
+      items.push({ label: "$(debug-disconnect) Disconnect all", disconnectAll: true });
+      const picked = await vscode.window.showQuickPick(items, {
+        title: "Solace Try Me connections",
+        placeHolder: "Select a connection to show it",
+      });
+      if (picked?.disconnectAll) {
+        host.broadcast("connection/command", { action: "disconnect" });
+      } else if (picked?.viewId) {
+        host.reveal(picked.viewId);
       }
-    )
+    }),
+    vscode.commands.registerCommand("solaceTryMeVscExtension.copyDiagnostics", async () => {
+      const text = await buildDiagnostics(context, preferences, connections, host, logBuffer);
+      await vscode.env.clipboard.writeText(text);
+      vscode.window.showInformationMessage(
+        "Solace Try Me diagnostics copied to the clipboard. Passwords are never included."
+      );
+    })
   );
 
-  // Register solaceTryMeVscExtension.newWindow command to open the webview in a new window
-  context.subscriptions.push(
-    vscode.commands.registerCommand("solaceTryMeVscExtension.newWindow", () => {
-      let tabNumber = 1;
-      while (openTabs.has(tabNumber)) {
-        tabNumber++;
+  preferences.whenReady().then(
+    ({ isFirstRun }) => {
+      if (isFirstRun) {
+        vscode.commands.executeCommand("workbench.action.openWalkthrough", WALKTHROUGH_ID, false);
       }
-      openTabs.add(tabNumber);
-
-      const panel = vscode.window.createWebviewPanel(
-        "solaceTryMeVscExtension.newWindow",
-        `Solace Try Me - Tab ${tabNumber}`,
-        vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-        }
-      );
-      const provider = new SolaceTryMeViewProvider(context);
-      provider.resolveWebviewView(panel);
-      panel.onDidDispose(() => {
-        openTabs.delete(tabNumber);
-      });
-    })
+    },
+    (error) => log.error(`Could not load preferences: ${error}`)
   );
 }
 
-class SolaceTryMeViewProvider implements vscode.WebviewViewProvider {
-  constructor(private readonly context: vscode.ExtensionContext) {}
-
-  resolveWebviewView(webviewView: vscode.WebviewView | vscode.WebviewPanel) {
-    const { webview } = webviewView;
-
-    webview.onDidReceiveMessage(async (message) => {
-      if (message.command === "openInNewTab") {
-        try {
-          if (message.filePath && message.fileName) {
-            // Write content to a file and open it in a new tab
-            let uri = vscode.Uri.joinPath(
-              vscode.Uri.file(message.filePath),
-              message.fileName
-            );
-            const isAbsolutePath = path.isAbsolute(message.filePath);
-            const workspaceFolders = vscode.workspace.workspaceFolders;
-
-            if (!isAbsolutePath && workspaceFolders) {
-              const workspacePath = workspaceFolders[0].uri.fsPath;
-              uri = vscode.Uri.joinPath(
-                vscode.Uri.file(workspacePath),
-                message.filePath,
-                message.fileName
-              );
-            }
-
-            await vscode.workspace.fs.writeFile(
-              uri,
-              Buffer.from(message.content, "utf8")
-            );
-            const document = await vscode.workspace.openTextDocument(uri);
-            vscode.window.showTextDocument(document, { preview: true });
-          } else {
-            const document = await vscode.workspace.openTextDocument({
-              content: message.content,
-              language: message.language ?? "plaintext",
-            });
-            vscode.window.showTextDocument(document, { preview: true });
-          }
-        } catch (error: unknown) {
-          console.error("Error opening file in new tab: ", error);
-          // Show VSC error message
-          vscode.window.showErrorMessage(
-            "Error opening file in new tab: " +
-              ((error as Error)?.message ?? error)
-          );
-        }
-      } else if (message.command === "savePreferences") {
-        this.context.globalState.update("preferences", message.preferences);
-      } else if (message.command === "getPreferences") {
-        webview.postMessage({
-          command: "getPreferences/response",
-          preferences: this.context.globalState.get("preferences", ""),
-        });
-      }
-    });
-
-    // Allow scripts in the webview
-    webview.options = {
-      enableScripts: true,
-    };
-
-    // Set the HTML content for the webview
-    webview.html = this.getHtmlForWebview(webview);
-
-    // Send the current theme to the webview
-    this.updateTheme(webview);
-
-    // Listen for theme changes and update the webview accordingly
-    vscode.window.onDidChangeActiveColorTheme((event) => {
-      this.updateTheme(webview);
-    });
-  }
-
-  private getHtmlForWebview(webview: vscode.Webview): string {
-    const uriPrefix = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, "webview-dist")
-    );
-
-    const jsUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.js");
-    const cssUri = vscode.Uri.joinPath(uriPrefix, "assets", "index.css");
-
-    const theme = this.getTheme();
-
-    return `
-    <!DOCTYPE html>
-    <html lang="en" class="${theme}">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Solace TryMe VSC Extension View</title>
-        <script type="module" crossorigin src="${jsUri}"></script>
-        <link rel="stylesheet" crossorigin href="${cssUri}">
-      </head>
-      <body>
-        <div id="root"></div>
-      </body>
-    </html>
-    `;
-  }
-
-  private getTheme() {
-    // Using dark for high contrast and dark themes
-    return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light
-      ? "light"
-      : "dark";
-  }
-
-  // Method to send the current theme to the webview
-  private updateTheme(webview: vscode.Webview) {
-    const theme = this.getTheme();
-    // Send a message to the webview to update the theme
-    webview.postMessage({ command: "setTheme", theme });
-  }
+async function buildDiagnostics(
+  context: vscode.ExtensionContext,
+  preferences: PreferencesStore,
+  connections: ConnectionTracker,
+  host: WebviewHost,
+  logBuffer: LogBuffer
+) {
+  const prefs = await preferences.get();
+  const sessions = connections.list();
+  const lines = [
+    "## Solace Try Me diagnostics",
+    "",
+    `- Extension: ${context.extension.packageJSON.version}`,
+    `- VS Code: ${vscode.version} (${vscode.env.appName}, ${vscode.env.uiKind === vscode.UIKind.Web ? "web" : "desktop"})`,
+    `- Remote: ${vscode.env.remoteName ?? "none"}`,
+    `- Platform: ${process.platform} ${process.arch}`,
+    `- solclientjs: ${host.getSolclientVersion()}`,
+    `- Open views: ${host.listViews().map((v) => v.label).join(", ") || "none"}`,
+    `- Broker profiles: ${prefs.brokerConfigs.length}`,
+    "",
+    "### Settings",
+    "```json",
+    JSON.stringify(prefs.settings, null, 2),
+    "```",
+    "",
+    "### Sessions",
+    ...(sessions.length
+      ? sessions.map(
+          (s) =>
+            `- ${s.viewLabel}/${s.role}: ${s.status}${s.brokerTitle ? ` · ${s.brokerTitle}` : ""}${
+              s.clientName ? ` · ${s.clientName}` : ""
+            }${s.reason ? ` · reason: ${s.reason}` : ""}${s.error ? ` · ${s.error}` : ""}`
+        )
+      : ["- none"]),
+    "",
+    "### Recent log",
+    "```",
+    ...logBuffer.tail(50),
+    "```",
+  ];
+  return lines.join("\n");
 }
 
 export function deactivate() {}
