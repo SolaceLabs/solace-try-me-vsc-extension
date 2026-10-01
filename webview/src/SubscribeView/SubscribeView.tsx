@@ -15,6 +15,7 @@ import SolaceManager, {
   SubscriptionError,
 } from "../Shared/SolaceManager";
 import ErrorMessage from "../Shared/components/ErrorMessage";
+import { wrappingTopicChip } from "../Shared/components/chipStyles";
 import { usePreferences } from "../Shared/components/SettingsContext";
 import { usePublishDraft } from "../Shared/components/PublishDraftContext";
 import { usePersistentState } from "../Shared/usePersistentState";
@@ -495,6 +496,7 @@ const SubscribeView = () => {
               const chip = (
                 <Chip
                   key={topic}
+                  classNames={wrappingTopicChip}
                   onClose={status?.state === "pending" ? undefined : () => unsubscribeTopic(topic)}
                   color={status?.state === "error" ? "danger" : status?.state === "ok" ? "default" : "default"}
                   variant={status?.state === "ok" || !isConnected ? "solid" : "flat"}
@@ -538,7 +540,11 @@ const SubscribeView = () => {
           />
           <div className="flex gap-2 flex-wrap overflow-auto pb-3 px-1">
             {ignoreTopics.map((topic) => (
-              <Chip key={topic} onClose={() => setIgnoreTopics((prev) => prev.filter((t) => t !== topic))}>
+              <Chip
+                key={topic}
+                classNames={wrappingTopicChip}
+                onClose={() => setIgnoreTopics((prev) => prev.filter((t) => t !== topic))}
+              >
                 {topic}
               </Chip>
             ))}

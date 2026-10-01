@@ -9,6 +9,7 @@ import { BindingStatus } from "../Shared/SolaceManager";
 import ErrorMessage from "../Shared/components/ErrorMessage";
 import { validateTopic } from "../Shared/topics";
 import { copyToClipboard } from "../Shared/utils";
+import { wrappingChip, wrappingTopicChip } from "../Shared/components/chipStyles";
 
 interface EndpointSectionProps {
   settings: EndpointSettings;
@@ -148,7 +149,7 @@ const EndpointSection = ({
           />
           <div className="flex gap-2 flex-wrap">
             {settings.subscriptions.map((topic) => (
-              <Chip key={topic} size="sm" onClose={() => onRemoveSubscription(topic)}>
+              <Chip key={topic} size="sm" classNames={wrappingTopicChip} onClose={() => onRemoveSubscription(topic)}>
                 {topic}
               </Chip>
             ))}
@@ -166,7 +167,13 @@ const EndpointSection = ({
           {isBound ? (isBrowse ? "Stop Browsing" : "Stop Consume") : isBrowse ? "Start Browsing" : "Start Consume (removes messages)"}
         </Button>
         {state && (
-          <Chip size="sm" variant="flat" color={state.color} startContent={status?.state === "binding" ? <Spinner size="sm" color="current" /> : undefined}>
+          <Chip
+            size="sm"
+            variant="flat"
+            color={state.color}
+            classNames={wrappingChip}
+            startContent={status?.state === "binding" ? <Spinner size="sm" color="current" /> : undefined}
+          >
             {state.text}
           </Chip>
         )}

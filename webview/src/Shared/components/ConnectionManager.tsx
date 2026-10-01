@@ -18,6 +18,7 @@ import SolaceManager, {
   ConnectionStatus,
 } from "../SolaceManager";
 import ErrorMessage from "./ErrorMessage";
+import { wrappingChip } from "./chipStyles";
 import { usePreferences } from "./SettingsContext";
 import { usePersistentState } from "../usePersistentState";
 import { host } from "../host";
@@ -266,7 +267,7 @@ const ConnectionManager = ({
         </div>
       </div>
       {state.status === ConnectionStatus.RECONNECTING && (
-        <Chip size="sm" color="warning" variant="flat" className="mt-2">
+        <Chip size="sm" color="warning" variant="flat" className="mt-2" classNames={wrappingChip}>
           Connection interrupted. Reconnecting{state.error ? `: ${state.error}` : "…"}
         </Chip>
       )}
