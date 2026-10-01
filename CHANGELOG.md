@@ -48,6 +48,11 @@ All notable changes to the "solace-try-me-vsc-extension" extension will be docum
 - Subscribe "Clear Fields" and recent topic suggestions (#28).
 - Form state is kept when a view is reloaded, and tabs are restored after a window reload.
 
+## [0.0.13] - 2026-10-01
+- Upgraded dependencies: solclientjs 10.18.3, NextUI 2.6, framer-motion 12, lucide-react 1.x, Vite 8, ESLint 10, TypeScript 6. `npm audit` reports no vulnerabilities.
+- Release workflow: Node 24, pinned @vscode/vsce, and publishing is skipped when the version is already on the Marketplace.
+- The extension package no longer includes CI and development files.
+
 ## [0.0.12] - 2025-01-20
 - Fixed some queue disconnection issues
 
