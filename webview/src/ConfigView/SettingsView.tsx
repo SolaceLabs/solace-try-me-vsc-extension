@@ -55,6 +55,27 @@ const NumberSetting = ({ label, tooltip, value, min, max, onCommit, description 
   );
 };
 
+interface SwitchSettingProps {
+  label: string;
+  tooltip: string;
+  isSelected: boolean;
+  onValueChange: (value: boolean) => void;
+}
+
+/** The info icon sits next to the switch: inside its label, the switch swallows the hover. */
+const SwitchSetting = ({ label, tooltip, isSelected, onValueChange }: SwitchSettingProps) => (
+  <div className="flex items-center gap-3">
+    <Switch isSelected={isSelected} onValueChange={onValueChange}>
+      {label}
+    </Switch>
+    <Tooltip content={tooltip}>
+      <span tabIndex={0} aria-label={tooltip} className="inline-flex outline-none">
+        <Info />
+      </span>
+    </Tooltip>
+  </div>
+);
+
 const SettingsView = ({ show, onClose }: { show: boolean; onClose: () => void }) => {
   const { settings, updateSettings } = useSettings();
   const [pathDraft, setPathDraft] = useState<string | null>(null);
@@ -103,25 +124,18 @@ const SettingsView = ({ show, onClose }: { show: boolean; onClose: () => void })
                 max={timeoutLimits.max}
                 onCommit={(minutes) => set({ brokerDisconnectTimeout: minutes * 60000 })}
               />
-              <Switch
+              <SwitchSetting
+                label="Notify on unexpected disconnects"
+                tooltip="Show a VS Code notification when a connection drops or times out, with a Reconnect action."
                 isSelected={settings.showDisconnectNotifications}
                 onValueChange={(showDisconnectNotifications) => set({ showDisconnectNotifications })}
-              >
-                <div className="flex align-center gap-3">
-                  Notify on unexpected disconnects
-                  <Tooltip content="Show a VS Code notification when a connection drops or times out, with a Reconnect action.">
-                    <Info />
-                  </Tooltip>
-                </div>
-              </Switch>
-              <Switch isSelected={settings.savePayloads} onValueChange={(savePayloads) => set({ savePayloads })}>
-                <div className="flex align-center gap-3">
-                  Save payloads on open
-                  <Tooltip content="Whether to save the message to a new file or an unsaved file when you open it in VS Code.">
-                    <Info />
-                  </Tooltip>
-                </div>
-              </Switch>
+              />
+              <SwitchSetting
+                label="Save payloads on open"
+                tooltip="Whether to save the message to a new file or an unsaved file when you open it in VS Code."
+                isSelected={settings.savePayloads}
+                onValueChange={(savePayloads) => set({ savePayloads })}
+              />
               <Input
                 type="text"
                 label="Payload storage directory"
@@ -147,9 +161,6 @@ const SettingsView = ({ show, onClose }: { show: boolean; onClose: () => void })
                 </Link>
                 <Link size="sm" className="cursor-pointer" onPress={() => host.request("command/run", { command: "solaceTryMeVscExtension.copyDiagnostics" })}>
                   Copy diagnostics
-                </Link>
-                <Link size="sm" className="cursor-pointer" onPress={() => host.request("command/run", { command: "solaceTryMeVscExtension.openGettingStarted" })}>
-                  Getting started
                 </Link>
               </p>
             </ModalBody>

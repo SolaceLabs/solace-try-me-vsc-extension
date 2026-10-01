@@ -209,6 +209,13 @@ const SubscribeView = () => {
     solaceConnection?.setIgnoreTopics(ignoreTopics);
   }, [ignoreTopics, solaceConnection]);
 
+  // Notices from message actions (e.g. "Resent to ...") go away on their own.
+  useEffect(() => {
+    if (!actionMessage) return;
+    const timer = setTimeout(() => setActionMessage(null), actionMessage.isError ? 8000 : 3000);
+    return () => clearTimeout(timer);
+  }, [actionMessage]);
+
   const subscribeTopic = (raw: string) => {
     const topic = raw.trim();
     const error = validateTopic(topic);
@@ -594,22 +601,30 @@ const SubscribeView = () => {
       </div>
       <Divider className="my-3" />
       <div>
-        <div className="flex justify-between pb-3 mb-3 flex-wrap gap-2">
-          <div className="flex-grow flex flex-col justify-between h-auto">
+        <div className="flex justify-between items-end pb-3 mb-3 flex-wrap gap-2">
+          <div className="flex-grow flex flex-col gap-1">
             <h2>Messages (Most Recent {settings.maxDisplayMessages})</h2>
-            <div className="flex gap-2 align-center flex-wrap mb-2">
+            <div className="flex gap-2 align-center flex-wrap">
               <small>Direct: {stats.direct}</small>
               <small>Persistent: {stats.persistent}</small>
               <small>Non-Persistent: {stats.nonPersistent}</small>
               {!!stats.ignored && <small>Ignored: {stats.ignored}</small>}
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap justify-end items-end gap-1">
             <Button
               radius="sm"
               size="sm"
               variant="bordered"
-              className="w-full"
+              startContent={<Delete size={12} />}
+              onPress={() => (binding ? setConfirmClear(true) : clearFields())}
+            >
+              Clear Fields
+            </Button>
+            <Button
+              radius="sm"
+              size="sm"
+              variant="bordered"
               startContent={<SquareX size={12} />}
               onPress={() => {
                 incoming.current = [];
@@ -623,25 +638,22 @@ const SubscribeView = () => {
               radius="sm"
               size="sm"
               variant="bordered"
-              className="w-full"
               startContent={<Trash2 size={12} />}
               onPress={() => setStats(EMPTY_STATS)}
             >
               Clear Stats
             </Button>
-            <Button
-              radius="sm"
-              size="sm"
-              variant="bordered"
-              className="w-full"
-              startContent={<Delete size={12} />}
-              onPress={() => (binding ? setConfirmClear(true) : clearFields())}
-            >
-              Clear Fields
-            </Button>
           </div>
         </div>
-        {actionMessage && <ErrorMessage variant={actionMessage.isError ? "error" : "info"}>{actionMessage.text}</ErrorMessage>}
+        {actionMessage && (
+          <ErrorMessage
+            variant={actionMessage.isError ? "error" : "info"}
+            className="mb-3"
+            onClose={() => setActionMessage(null)}
+          >
+            {actionMessage.text}
+          </ErrorMessage>
+        )}
         <MessagesView
           messages={messages}
           maxPayloadLength={settings.maxPayloadLength}
