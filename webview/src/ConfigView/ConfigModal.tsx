@@ -222,6 +222,10 @@ const ConfigModal = ({
                     NSS database (~/.pki/nssdb) on Linux. Install the certificate together with its private key.
                     If several certificates match the CAs the broker asks for, the first one is used.
                   </p>
+                  <p>
+                    On macOS, allow VS Code to use the key when asked. To choose between several certificates, add
+                    an identity preference for https://&lt;broker host&gt; to the certificate in Keychain Access.
+                  </p>
                   <p>Certificate and key files (PFX, PEM) cannot be selected here.</p>
                   {hasSavedPassword && <p className="text-warning">The saved password is removed when you save.</p>}
                 </div>

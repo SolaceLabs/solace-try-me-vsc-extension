@@ -36,7 +36,8 @@ export async function selectClientCertificate(url: string): Promise<void> {
         signal: AbortSignal.timeout(SELECT_TIMEOUT_MS),
       }).then(
         () => undefined,
-        (error: Error) => log.info(`TLS check of ${origin} failed: ${error.message}`)
+        // Expected as well when the TLS handshake worked: the web transport does not answer plain HTTPS.
+        (error: Error) => log.debug(`Client certificate request to ${origin} ended: ${error.message}`)
       )
     )
   );
