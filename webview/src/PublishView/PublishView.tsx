@@ -25,7 +25,6 @@ import { usePreferences } from "../Shared/components/SettingsContext";
 import { usePublishDraft } from "../Shared/components/PublishDraftContext";
 import { usePersistentState } from "../Shared/usePersistentState";
 import { createUid } from "../Shared/messageCodec";
-import { reportMilestone } from "../Shared/utils";
 import {
   DEFAULT_REQUEST_TIMEOUT,
   MAX_HISTORY_PAYLOAD_LENGTH,
@@ -186,7 +185,6 @@ const PublishView = () => {
       setStats((prev) => (tracked ? { ...prev, persistent: prev.persistent + 1 } : { ...prev, direct: prev.direct + 1 }));
       if (tracked) historyIds.current.add(id);
       recordHistory(id, { ...config, mode: undefined, requestTimeout: undefined }, "sent");
-      reportMilestone("published");
     } catch (error) {
       setErrorMessage((error as Error).message);
     }
@@ -203,7 +201,6 @@ const PublishView = () => {
       const result = await solaceConnection.request(config.publishTo, config.content, optionsFor(config), timeout);
       setReply({ message: result.reply, rttMs: result.rttMs });
       recordHistory(id, config, "acknowledged");
-      reportMilestone("published");
     } catch (error) {
       setErrorMessage(`Request failed: ${(error as Error).message}`);
       recordHistory(id, config, "rejected", (error as Error).message);

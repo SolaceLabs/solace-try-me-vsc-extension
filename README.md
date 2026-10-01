@@ -37,7 +37,7 @@ Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to
 
 **General**
 - Save presets for publish and subscribe, open several Try Me tabs, and keep your form state when a view is reloaded.
-- A Getting Started walkthrough, including a command to start a local broker with Docker.
+- A command to start a local broker with Docker (**Solace Try Me: Start a Local Broker (Docker)**).
 - Supports light, dark and high contrast themes.
 
 ## Requirements

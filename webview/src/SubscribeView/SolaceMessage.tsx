@@ -11,7 +11,6 @@ import {
   formatDate,
   formatPropertyValue,
   openFileInNewTab,
-  reportMilestone,
 } from "../Shared/utils";
 import { toExportable } from "../Shared/messageCodec";
 
@@ -183,7 +182,6 @@ const SolaceMessage = ({
   const openInEditor = () => {
     const exportable = toExportable(message);
     openFileInNewTab(JSON.stringify(exportable, null, 2), { id: message._extension_uid, language: "json" });
-    reportMilestone("openedMessage");
   };
 
   const cardHeader = (

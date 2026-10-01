@@ -99,7 +99,7 @@ export function connectionHint(error: unknown, context: ConnectionHintContext): 
   if (subcode === undefined || TRANSPORT_SUBCODES.has(subcode) || describedLower.includes("connection")) {
     const hints: string[] = [];
     if (context.isDefaultLocalhost) {
-      hints.push("Is a broker running on localhost:8008? Run \"Solace Try Me: Start a Local Broker (Docker)\" or open the Getting Started walkthrough.");
+      hints.push("Is a broker running on localhost:8008? Run \"Solace Try Me: Start a Local Broker (Docker)\" to start one.");
     }
     if (context.remoteName && urls.some((u) => /\/\/(localhost|127\.0\.0\.1|\[::1\])/.test(u))) {
       hints.push(

@@ -23,8 +23,6 @@ import { usePreferences } from "./SettingsContext";
 import { usePersistentState } from "../usePersistentState";
 import { host } from "../host";
 import { logger } from "../logger";
-import { reportMilestone } from "../utils";
-import { DEFAULT_LOCALHOST_BROKER_ID } from "../constants";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "./Modal";
 
 interface ConnectionManagerProps {
@@ -76,9 +74,7 @@ const ConnectionManager = ({
     const unsubscribe = manager.onStateChange((next) => {
       lastChange.current = Date.now();
       setState(next);
-      if (next.status === ConnectionStatus.CONNECTED) {
-        reportMilestone("connected");
-      } else if (next.status === ConnectionStatus.DISCONNECTED && next.reason === "failed") {
+      if (next.status === ConnectionStatus.DISCONNECTED && next.reason === "failed") {
         // Ask again next time: the prompted password may have been wrong.
         const brokerId = manager.getBroker()?.id;
         if (brokerId) promptedPasswords.current.delete(brokerId);
@@ -286,18 +282,6 @@ const ConnectionManager = ({
           <p>{state.error}</p>
           {state.hint && <p className="mt-1 opacity-80">{state.hint}</p>}
           <p className="mt-1">
-            {selected?.id === DEFAULT_LOCALHOST_BROKER_ID && !isInactivity && (
-              <>
-                <Link
-                  size="sm"
-                  className="cursor-pointer"
-                  onPress={() => host.request("command/run", { command: "solaceTryMeVscExtension.openGettingStarted" })}
-                >
-                  Getting started
-                </Link>
-                {" · "}
-              </>
-            )}
             <Link
               size="sm"
               className="cursor-pointer"
