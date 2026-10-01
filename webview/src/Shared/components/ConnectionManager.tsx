@@ -23,6 +23,7 @@ import { usePreferences } from "./SettingsContext";
 import { usePersistentState } from "../usePersistentState";
 import { host } from "../host";
 import { logger } from "../logger";
+import { selectClientCertificate } from "../clientCertificate";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "./Modal";
 
 interface ConnectionManagerProps {
@@ -166,6 +167,10 @@ const ConnectionManager = ({
         })
         .catch(() => selected.url);
       if (cancelled()) return;
+      if (selected.authScheme === "clientCertificate") {
+        await selectClientCertificate(url);
+        if (cancelled()) return;
+      }
       setConnectedConfigKey(sessionOptionsKey(selected));
       manager.connect({
         broker: selected,

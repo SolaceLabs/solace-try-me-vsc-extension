@@ -83,7 +83,7 @@ const CLIENT_CERTIFICATE_LOGIN_HINT =
 const CLIENT_CERTIFICATE_TLS_HINT =
   "Check the URL and the port of the broker's secure web transport (e.g. 443 or 1443), and that your operating " +
   "system trusts the broker's certificate (self-signed certificates are rejected). The TLS handshake also fails " +
-  "when the client certificate's private key cannot be used, e.g. when access to it was denied.";
+  "when the client certificate's private key cannot be used, e.g. when VS Code was denied access to it in a keychain prompt.";
 
 /** Suggests what to check for a failed or lost connection. */
 export function connectionHint(error: unknown, context: ConnectionHintContext): string | undefined {
