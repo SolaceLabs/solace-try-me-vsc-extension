@@ -38,6 +38,9 @@ const BrokerSelect = ({ onBrokerSelect }: BrokerSelectProps) => {
       onClick={(open) => open && fetchBrokers()}
       disabledKeys={["no-item-available"]}
       isRequired
+      // NextUI 2.4 Select always used native validation; keep that despite the
+      // app-wide "aria" default set on NextUIProvider.
+      validationBehavior="native"
       selectedKeys={currentBroker ? [currentBroker.id] : []}
       onSelectionChange={(selection) => {
         const values = Array.from(selection);

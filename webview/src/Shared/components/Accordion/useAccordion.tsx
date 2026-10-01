@@ -136,11 +136,10 @@ export function useAccordion<T extends object>(props: UseAccordionProps<T>) {
      */
     React.Children.map(childrenProp, (child) => {
       if (React.isValidElement(child) && typeof child.props?.children !== "string") {
-        const clonedChild = React.cloneElement(child, {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          hasChildItems: false,
-        });
+        const clonedChild = React.cloneElement(
+          child as React.ReactElement<{ hasChildItems?: boolean }>,
+          { hasChildItems: false },
+        );
 
         treeChildren.push(clonedChild);
       } else {

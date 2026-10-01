@@ -1,6 +1,7 @@
+import type {Variants} from "framer-motion";
 import {TRANSITION_EASINGS} from "@nextui-org/framer-utils";
 
-export const scaleInOut = {
+export const scaleInOut: Variants = {
   enter: {
     scale: "var(--scale-enter)",
     y: "var(--slide-enter)",
