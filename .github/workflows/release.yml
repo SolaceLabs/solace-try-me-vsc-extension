@@ -6,16 +6,43 @@ on:
     paths:
       - "package.json"
 
+permissions:
+  contents: read
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2
-      - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 18.x
-      - run: npm install
-      - run: npm run build
-      - run: npx vsce publish
+          # vite 8, @vitejs/plugin-react 6, ESLint 10 and @vscode/vsce 4 need Node >= 22
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            webview/package-lock.json
+      - run: npm ci
+      # package.json also changes for dependency and script updates, so only publish
+      # when its version is not on the Marketplace yet.
+      - name: Check if this version is already published
+        id: version
+        run: |
+          LOCAL=$(node -p "require('./package.json').version")
+          EXTENSION_ID=$(node -p "const p = require('./package.json'); p.publisher + '.' + p.name")
+          PUBLISHED=$(npx @vscode/vsce show "$EXTENSION_ID" --json 2>/dev/null \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).versions[0].version)}catch{console.log('')}})")
+          echo "Local version: $LOCAL, published version: ${PUBLISHED:-unknown}"
+          if [ "$LOCAL" = "$PUBLISHED" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+      # vsce package runs vscode:prepublish (the full build) once
+      - if: steps.version.outputs.publish == 'true'
+        run: npx @vscode/vsce package --out extension.vsix
+      # @vscode/vsce is a devDependency; the unscoped "vsce" package is deprecated
+      - if: steps.version.outputs.publish == 'true'
+        run: npx @vscode/vsce publish --packagePath extension.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}

@@ -2,7 +2,7 @@
   "name": "solace-try-me-vsc-extension",
   "displayName": "Solace Try Me VSC Extension",
   "description": "VSC built-in tool to visualize and observe events flowing through Solace PubSub+ Broker.",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "publisher": "solace-tools",
   "author": {
     "name": "Cyrus Mobini"
@@ -66,21 +66,17 @@
     "vscode:prepublish": "npm run build",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
     "build:view": "cd webview && npm i && npm run build",
     "build": "npm run build:view && npm run compile",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "lint": "eslint src"
   },
   "devDependencies": {
-    "@types/vscode": "^1.93.0",
-    "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
-    "@typescript-eslint/eslint-plugin": "^8.3.0",
-    "@typescript-eslint/parser": "^8.3.0",
-    "eslint": "^9.9.1",
-    "typescript": "^5.5.4",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@types/vscode": "~1.93.0",
+    "@typescript-eslint/eslint-plugin": "^8.71.0",
+    "@typescript-eslint/parser": "^8.71.0",
+    "@vscode/vsce": "^4.0.0",
+    "eslint": "^10.11.0",
+    "typescript": "~6.0.3"
   }
 }
