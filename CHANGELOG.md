@@ -2,7 +2,7 @@
 
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
-## [0.1.3] - 2026-10-01
+## [0.1.2] - 2026-10-01
 
 ### New
 - Message search can be limited to the topic, the payload or the user properties, and has **Match case**, **Use regular expression** and **Hide matches** toggles. An invalid regular expression is shown under the filter instead of filtering. The filter is kept when the view is reloaded.
