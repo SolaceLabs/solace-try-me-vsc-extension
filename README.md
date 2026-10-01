@@ -19,9 +19,11 @@ Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to
 - Subscribe to topics with Solace wildcards (`*`, `prefix*`, `>`). Subscriptions are confirmed by the broker, and rejected ones show the reason.
 - Consume queues and topic endpoints, or **browse a queue without removing messages** and delete individual messages from it.
 - Temporary queues with topic subscriptions, and "create if missing" for durable endpoints.
-- Hide noisy topics with ignore patterns, pause the live stream, filter by topic, payload or user property, and export the listed messages as JSON.
-- Payloads are decoded by message type (Text, Bytes, Map, Stream); binary data that is not UTF-8 is shown as base64.
-- Open any message in an editor tab, copy it to the Publish section, or resend it as-is.
+- Hide noisy topics with ignore patterns and pause the live stream.
+- Search the topic, payload, user properties or all of them, with match case, regular expressions and "hide matches". Quick filters narrow the list by source (direct, queue, browsed, reply), delivery mode, message type, redelivered and user properties.
+- Payloads are decoded by message type (Text, Bytes, Map, Stream). Show each payload as raw text, pretty JSON (when that keeps the exact values), a hex dump or base64; binary data that is not UTF-8 starts as base64.
+- From a message: filter the list to its topic, ignore or subscribe to the topic, copy the topic, open the message in an editor tab, copy it to the Publish section, or resend it as-is.
+- Select messages, or take the whole filtered list, and export them as a ZIP with one JSON file per message.
 
 **Publish**
 - Publish to topics or queues as Text or Bytes messages, with user properties and headers (priority, TTL, DMQ eligible, reply-to, correlation ID, application message ID and type).

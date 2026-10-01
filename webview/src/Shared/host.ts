@@ -12,6 +12,7 @@ import {
   StoredPreferences,
   withoutSecrets,
 } from "../../../src/shared/preferences";
+import { looksLikeZip, validateSaveZipRequest } from "../../../src/shared/messageArchive";
 
 interface VsCodeApi {
   getState(): unknown;
@@ -216,6 +217,22 @@ function createBrowserMock(deliver: (message: HostMessage) => void): VsCodeApi {
           win.document.body.appendChild(pre);
         }
         return null;
+      }
+      case "file/saveZip": {
+        const { fileName, base64 } = validateSaveZipRequest(params);
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        if (!looksLikeZip(bytes)) throw new Error("The archive content is not a ZIP file.");
+        const url = URL.createObjectURL(new Blob([bytes], { type: "application/zip" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        return { saved: true, path: fileName };
       }
       case "broker/resolveUrl":
         return params.url;

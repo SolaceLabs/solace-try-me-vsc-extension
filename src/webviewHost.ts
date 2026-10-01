@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import * as vscode from "vscode";
 import { ConnectionStateMessage, ConnectionTracker } from "./connections";
 import { openContent } from "./fileOpen";
+import { saveZip } from "./fileSave";
 import { PreferencesStore } from "./preferencesStore";
 import { PreferencesOp } from "./shared/preferences";
 
@@ -256,6 +257,8 @@ export class WebviewHost implements vscode.WebviewViewProvider, vscode.WebviewPa
           this.log
         );
         return null;
+      case "file/saveZip":
+        return saveZip(params, this.log);
       case "broker/resolveUrl":
         return params.forward === true
           ? resolveBrokerUrl(String(params.url ?? ""), this.log)

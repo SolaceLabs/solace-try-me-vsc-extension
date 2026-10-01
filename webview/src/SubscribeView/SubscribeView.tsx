@@ -15,6 +15,7 @@ import SolaceManager, {
   SubscriptionError,
 } from "../Shared/SolaceManager";
 import ErrorMessage from "../Shared/components/ErrorMessage";
+import IconButton from "../Shared/components/IconButton";
 import { wrappingTopicChip } from "../Shared/components/chipStyles";
 import { usePreferences } from "../Shared/components/SettingsContext";
 import { usePublishDraft } from "../Shared/components/PublishDraftContext";
@@ -30,6 +31,10 @@ type TopicState = { state: "pending" | "ok" | "error"; error?: string };
 
 const EMPTY_STATS: SubscribeStats = { direct: 0, persistent: 0, nonPersistent: 0, ignored: 0 };
 const FLUSH_INTERVAL = 150;
+
+/** Received topics are literal, but `*` at the end of a level or a trailing `>` act as wildcards in a subscription. */
+const actsAsWildcard = (topic: string) =>
+  topic.split("/").some((level, index, levels) => level.endsWith("*") || (level === ">" && index === levels.length - 1));
 
 const SubscribeView = () => {
   const { settings, preferences, update } = usePreferences();
@@ -215,16 +220,33 @@ const SubscribeView = () => {
     return () => clearTimeout(timer);
   }, [actionMessage]);
 
-  const subscribeTopic = (raw: string) => {
+  /**
+   * Adds a topic to the subscriptions and subscribes it when connected. From a message card
+   * (fromInput false), errors are reported next to the message list and the input is kept.
+   */
+  const subscribeTopic = (raw: string, fromInput = true) => {
     const topic = raw.trim();
     const error = validateTopic(topic);
+    const reportError = (text: string) => (fromInput ? setTopicError(text) : setActionMessage({ text, isError: true }));
     if (error) {
-      setTopicError(error);
+      reportError(error);
       return;
     }
-    setTopicError(null);
-    setTopicInputField("");
-    if (topics.includes(topic)) return;
+    if (fromInput) {
+      setTopicError(null);
+      setTopicInputField("");
+    }
+    if (topics.includes(topic)) {
+      if (!fromInput) setActionMessage({ text: `Already subscribed to ${topic}.`, isError: false });
+      return;
+    }
+    if (!fromInput) {
+      const note = actsAsWildcard(topic) ? ` "${topic}" also matches other topics as a wildcard.` : "";
+      setActionMessage({
+        text: `${isConnected ? "Subscribing to" : "Added"} ${topic}${isConnected ? "" : "; it is subscribed when you connect"}.${note}`,
+        isError: false,
+      });
+    }
     setTopics((prev) => [...prev, topic]);
     update({ type: "addRecentTopic", topic }).catch(() => undefined);
     if (solaceConnection && isConnected) {
@@ -239,7 +261,7 @@ const SubscribeView = () => {
             sessionTopics.current.delete(topic);
             setTopics((prev) => prev.filter((t) => t !== topic));
             setStatus(topic, null);
-            setTopicError(`Could not subscribe to "${topic}": ${e.message}`);
+            reportError(`Could not subscribe to "${topic}": ${e.message}`);
           } else {
             // Interrupted (disconnect or reconnect): keep it; it is retried on (re)connect.
             setStatus(topic, { state: "error", error: e.message });
@@ -273,6 +295,30 @@ const SubscribeView = () => {
       removeFromList(topic);
     }
   };
+
+  /** "Ignore this topic" on a message card: adds the exact topic. */
+  const ignoreTopic = (topic: string) => {
+    const error = validateTopic(topic);
+    if (error) {
+      setActionMessage({ text: `Cannot ignore "${topic}": ${error}`, isError: true });
+      return;
+    }
+    if (ignoreTopics.includes(topic)) {
+      setActionMessage({ text: `${topic} is already ignored.`, isError: false });
+      return;
+    }
+    setIgnoreTopics((prev) => Array.from(new Set([...prev, topic])));
+    const note = actsAsWildcard(topic) ? ` As a pattern, "${topic}" also hides other topics.` : "";
+    setActionMessage({ text: `Ignoring ${topic}: new direct messages on it are hidden.${note}`, isError: false });
+  };
+
+  // Message card actions read the latest state without re-creating the actions object.
+  const subscribeTopicRef = useRef(subscribeTopic);
+  const ignoreTopicRef = useRef(ignoreTopic);
+  useEffect(() => {
+    subscribeTopicRef.current = subscribeTopic;
+    ignoreTopicRef.current = ignoreTopic;
+  });
 
   const addIgnoreTopic = () => {
     const topic = ignoreTopicInputField.trim();
@@ -436,6 +482,8 @@ const SubscribeView = () => {
           setActionMessage({ text: (error as Error).message, isError: true });
         }
       },
+      onIgnoreTopic: (topic: string) => ignoreTopicRef.current(topic),
+      onSubscribeTopic: (topic: string) => subscribeTopicRef.current(topic, false),
     }),
     [solaceConnection, sendToPublish]
   );
@@ -608,37 +656,22 @@ const SubscribeView = () => {
             </div>
           </div>
           <div className="flex flex-wrap justify-end items-end gap-1">
-            <Button
-              radius="sm"
-              size="sm"
-              variant="bordered"
-              startContent={<Delete size={12} />}
-              onPress={() => (binding ? setConfirmClear(true) : clearFields())}
-            >
-              Clear Fields
-            </Button>
-            <Button
-              radius="sm"
-              size="sm"
-              variant="bordered"
-              startContent={<SquareX size={12} />}
+            <IconButton label="Clear Fields" onPress={() => (binding ? setConfirmClear(true) : clearFields())}>
+              <Delete />
+            </IconButton>
+            <IconButton
+              label="Clear Messages"
               onPress={() => {
                 incoming.current = [];
                 setPendingCount(0);
                 setMessages([]);
               }}
             >
-              Clear Messages
-            </Button>
-            <Button
-              radius="sm"
-              size="sm"
-              variant="bordered"
-              startContent={<Trash2 size={12} />}
-              onPress={() => setStats(EMPTY_STATS)}
-            >
-              Clear Stats
-            </Button>
+              <SquareX />
+            </IconButton>
+            <IconButton label="Clear Stats" onPress={() => setStats(EMPTY_STATS)}>
+              <Trash2 />
+            </IconButton>
           </div>
         </div>
         {actionMessage && (
