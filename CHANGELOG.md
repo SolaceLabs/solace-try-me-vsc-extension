@@ -3,7 +3,8 @@
 All notable changes to the "solace-try-me-vsc-extension" extension will be documented in this file.
 
 ## [0.1.1] - 2026-10-01
-- Settings: the info tooltips next to the switches show on hover again, and the Getting Started link is removed.
+- Settings: the info tooltips next to the switches show on hover again.
+- Removed the Getting Started walkthrough and its command, menu entry and links. "Start a Local Broker (Docker)" is still available.
 - Subscribe: the notice after "Resend as-is" goes away on its own (or with its close button) and no longer touches the filter field.
 - Subscribe: "Clear Fields", "Clear Messages" and "Clear Stats" sit in one row aligned to the bottom, with "Clear Fields" first.
 

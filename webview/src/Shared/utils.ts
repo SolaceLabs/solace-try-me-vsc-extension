@@ -2,13 +2,6 @@ import solace from "solclientjs";
 import { host } from "./host";
 import { logger } from "./logger";
 
-export type Milestone = "connected" | "subscribed" | "published" | "openedMessage";
-
-/** Lets the Getting Started walkthrough tick off its steps. */
-export function reportMilestone(name: Milestone) {
-  host.post("milestone", { name });
-}
-
 /** Opens content in a VS Code editor. The host decides whether to save it to disk. */
 export function openFileInNewTab(
   content: string,

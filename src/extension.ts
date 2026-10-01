@@ -4,7 +4,6 @@ import { ConnectionTracker } from "./connections";
 import { PreferencesStore } from "./preferencesStore";
 import { LogBuffer, PANEL_VIEW_TYPE, SIDE_VIEW_ID, WebviewHost } from "./webviewHost";
 
-const WALKTHROUGH_ID = "solace-tools.solace-try-me-vsc-extension#solaceTryMe.gettingStarted";
 const LOCAL_BROKER_COMMAND =
   "docker run -d -p 8080:8080 -p 55555:55555 -p 8008:8008 -p 1883:1883 -p 5672:5672 -p 9000:9000 " +
   "--shm-size=1g --env username_admin_globalaccesslevel=admin --env username_admin_password=admin " +
@@ -33,9 +32,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("solaceTryMeVscExtension.newWindow", () => host.openPanel()),
     vscode.commands.registerCommand("solaceTryMeVscExtension.showLogs", () => log.show()),
-    vscode.commands.registerCommand("solaceTryMeVscExtension.openGettingStarted", () =>
-      vscode.commands.executeCommand("workbench.action.openWalkthrough", WALKTHROUGH_ID, false)
-    ),
     vscode.commands.registerCommand("solaceTryMeVscExtension.startLocalBroker", () => {
       const terminal = vscode.window.createTerminal({ name: "Solace broker" });
       terminal.show();
@@ -75,14 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  preferences.whenReady().then(
-    ({ isFirstRun }) => {
-      if (isFirstRun) {
-        vscode.commands.executeCommand("workbench.action.openWalkthrough", WALKTHROUGH_ID, false);
-      }
-    },
-    (error) => log.error(`Could not load preferences: ${error}`)
-  );
+  preferences.whenReady().catch((error) => log.error(`Could not load preferences: ${error}`));
 }
 
 async function buildDiagnostics(

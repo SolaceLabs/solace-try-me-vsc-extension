@@ -39,7 +39,7 @@ export class LogBuffer {
 
 /**
  * Creates the sidebar view and the "Tab N" panels, serves their HTML and routes their
- * messages: RPC requests, logs, connection state and walkthrough milestones.
+ * messages: RPC requests, logs and connection state.
  */
 export class WebviewHost implements vscode.WebviewViewProvider, vscode.WebviewPanelSerializer {
   private readonly views = new Map<string, ViewEntry>();
@@ -201,11 +201,6 @@ export class WebviewHost implements vscode.WebviewViewProvider, vscode.WebviewPa
       case "connection/state":
         this.connections.update(entry.id, entry.label, message as unknown as ConnectionStateMessage);
         break;
-      case "milestone":
-        if (typeof message.name === "string" && /^[a-zA-Z]+$/.test(message.name)) {
-          vscode.commands.executeCommand("setContext", `solaceTryMe.${message.name}`, true);
-        }
-        break;
       case "hello":
         if (typeof message.solclientVersion === "string") {
           this.solclientVersion = message.solclientVersion;
@@ -279,7 +274,6 @@ export class WebviewHost implements vscode.WebviewViewProvider, vscode.WebviewPa
         };
       case "command/run": {
         const allowed = new Set([
-          "solaceTryMeVscExtension.openGettingStarted",
           "solaceTryMeVscExtension.showLogs",
           "solaceTryMeVscExtension.copyDiagnostics",
         ]);

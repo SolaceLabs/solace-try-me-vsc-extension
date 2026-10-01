@@ -78,12 +78,6 @@
         "category": "Solace Try Me"
       },
       {
-        "command": "solaceTryMeVscExtension.openGettingStarted",
-        "title": "Getting Started",
-        "category": "Solace Try Me",
-        "icon": "$(question)"
-      },
-      {
         "command": "solaceTryMeVscExtension.startLocalBroker",
         "title": "Start a Local Broker (Docker)",
         "category": "Solace Try Me"
@@ -110,11 +104,6 @@
           "command": "solaceTryMeVscExtension.copyDiagnostics",
           "group": "overflow@2",
           "when": "view == solaceTryMeVscExtension.sideView"
-        },
-        {
-          "command": "solaceTryMeVscExtension.openGettingStarted",
-          "group": "overflow@3",
-          "when": "view == solaceTryMeVscExtension.sideView"
         }
       ],
       "commandPalette": [
@@ -123,82 +112,7 @@
           "when": "solaceTryMe.anyConnected"
         }
       ]
-    },
-    "walkthroughs": [
-      {
-        "id": "solaceTryMe.gettingStarted",
-        "title": "Get Started with Solace Try Me",
-        "description": "Connect to a Solace broker, subscribe to a topic and publish your first message.",
-        "steps": [
-          {
-            "id": "startBroker",
-            "title": "Start a broker",
-            "description": "You need a Solace PubSub+ event broker. Start one locally with Docker, or create a free Solace Cloud service.\n[Start a Local Broker](command:solaceTryMeVscExtension.startLocalBroker)",
-            "media": {
-              "markdown": "media/walkthrough/broker.md"
-            },
-            "completionEvents": [
-              "onCommand:solaceTryMeVscExtension.startLocalBroker"
-            ]
-          },
-          {
-            "id": "openView",
-            "title": "Open Solace Try Me",
-            "description": "The Solace Try Me view lives in the Activity Bar. Its \"Default Localhost\" profile connects to ws://localhost:8008.\n[Open Solace Try Me](command:solaceTryMeVscExtension.sideView.focus)",
-            "media": {
-              "markdown": "media/walkthrough/open.md"
-            },
-            "completionEvents": [
-              "onView:solaceTryMeVscExtension.sideView"
-            ]
-          },
-          {
-            "id": "connect",
-            "title": "Connect to the broker",
-            "description": "In the Subscribe section, pick a broker profile and press Connect. Use \"Test connection\" in a broker profile to check its settings first.",
-            "media": {
-              "markdown": "media/walkthrough/connect.md"
-            },
-            "completionEvents": [
-              "onContext:solaceTryMe.connected"
-            ]
-          },
-          {
-            "id": "subscribe",
-            "title": "Subscribe to a topic",
-            "description": "Add the topic try-me/> and press Subscribe. Wildcards: * matches one level, > matches the rest.",
-            "media": {
-              "markdown": "media/walkthrough/subscribe.md"
-            },
-            "completionEvents": [
-              "onContext:solaceTryMe.subscribed"
-            ]
-          },
-          {
-            "id": "publish",
-            "title": "Publish a message",
-            "description": "In the Publish section, connect, publish to try-me/hello and watch it arrive in Subscribe.",
-            "media": {
-              "markdown": "media/walkthrough/publish.md"
-            },
-            "completionEvents": [
-              "onContext:solaceTryMe.published"
-            ]
-          },
-          {
-            "id": "openMessage",
-            "title": "Open a message in the editor",
-            "description": "Press the open button on a received message to see its payload, headers and user properties in an editor tab.",
-            "media": {
-              "markdown": "media/walkthrough/open-message.md"
-            },
-            "completionEvents": [
-              "onContext:solaceTryMe.openedMessage"
-            ]
-          }
-        ]
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",

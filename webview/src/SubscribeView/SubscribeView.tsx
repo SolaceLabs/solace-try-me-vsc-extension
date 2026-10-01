@@ -21,7 +21,6 @@ import { usePublishDraft } from "../Shared/components/PublishDraftContext";
 import { usePersistentState } from "../Shared/usePersistentState";
 import { validateTopic } from "../Shared/topics";
 import { messageToPublishOptions } from "../Shared/messageCodec";
-import { reportMilestone } from "../Shared/utils";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "../Shared/components/Modal";
 import MessagesView from "./MessagesView";
 import EndpointSection from "./EndpointSection";
@@ -233,10 +232,7 @@ const SubscribeView = () => {
       sessionTopics.current.add(topic);
       solaceConnection
         .subscribe(topic)
-        .then(() => {
-          setStatus(topic, { state: "ok" });
-          reportMilestone("subscribed");
-        })
+        .then(() => setStatus(topic, { state: "ok" }))
         .catch((e: Error) => {
           if (isRejection(e)) {
             // The broker refused it: the topic is not subscribed, so drop it from the list.
