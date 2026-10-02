@@ -34,7 +34,7 @@ Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to
 **Connections**
 - Broker profiles with host lists for failover, client name and reconnect settings, and a **Test connection** button.
 - Passwords are stored in your operating system's keychain (VS Code SecretStorage), or requested on every connect.
-- **Client certificate authentication** over `wss://`: VS Code presents a certificate from your operating system's certificate store (Keychain on macOS, the personal certificate store on Windows, the NSS database `~/.pki/nssdb` on Linux). The username can come from the certificate.
+- **Client certificate authentication** (preview) over `wss://`: VS Code presents a certificate from your operating system's certificate store (Keychain on macOS, the personal certificate store on Windows, the NSS database `~/.pki/nssdb` on Linux). The username can come from the certificate.
 - Automatic reconnects re-apply subscriptions. A status bar item shows open connections, and you are notified when one drops.
 - Clear connection errors with hints, a "Solace Try Me" output channel (**Show Logs**) and **Copy Diagnostics** for bug reports.
 

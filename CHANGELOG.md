@@ -5,7 +5,7 @@ All notable changes to the "solace-try-me-vsc-extension" extension will be docum
 ## [0.1.3] - 2026-10-01
 
 ### New
-- Client certificate authentication (#27). Choose **Client certificate** under **Authentication** in a broker profile: VS Code presents a certificate from your operating system's certificate store during the TLS handshake (`wss://` or `https://` URLs only). The username is optional; leave it empty to use the one the broker takes from the certificate. Profiles saved by earlier versions keep using username and password. See Known Issues in the README for the limitations, and how to choose a certificate on macOS.
+- Client certificate authentication, as a preview (#27): feedback on how it works with your broker and certificate store is welcome. Choose **Client certificate** under **Authentication** in a broker profile: VS Code presents a certificate from your operating system's certificate store during the TLS handshake (`wss://` or `https://` URLs only). The username is optional; leave it empty to use the one the broker takes from the certificate. Profiles saved by earlier versions keep using username and password. See Known Issues in the README for the limitations, and how to choose a certificate on macOS.
 - Connection errors for client certificates explain what to check: a rejected or missing certificate, client certificate authentication turned off on the Message VPN, or a failed TLS handshake.
 
 ## [0.1.2] - 2026-10-01
