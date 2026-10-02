@@ -1,6 +1,12 @@
 const ALLOWED_PROTOCOLS = new Set(["ws:", "wss:", "http:", "https:"]);
+const SECURE_PROTOCOLS = new Set(["wss:", "https:"]);
 
-export function validateBrokerUrl(value: string): string | null {
+export interface BrokerUrlOptions {
+  /** Client certificates are sent during the TLS handshake, so every URL must use TLS. */
+  secureOnly?: boolean;
+}
+
+export function validateBrokerUrl(value: string, options: BrokerUrlOptions = {}): string | null {
   const urls = value.split(",").map((u) => u.trim()).filter(Boolean);
   if (!urls.length) return "Enter a URL.";
   for (const url of urls) {
@@ -15,6 +21,9 @@ export function validateBrokerUrl(value: string): string | null {
     }
     if (!ALLOWED_PROTOCOLS.has(parsed.protocol) || !parsed.hostname) {
       return `"${url}" must start with ws://, wss://, http:// or https://.`;
+    }
+    if (options.secureOnly && !SECURE_PROTOCOLS.has(parsed.protocol)) {
+      return `Client certificate authentication needs TLS: use wss:// or https:// instead of "${url}".`;
     }
   }
   return null;

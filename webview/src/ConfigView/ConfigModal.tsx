@@ -1,10 +1,10 @@
-import { Button, Checkbox, Input, Spinner, Switch } from "@nextui-org/react";
+import { Button, Checkbox, Input, Radio, RadioGroup, Spinner, Switch } from "@nextui-org/react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { ModalBody, Modal, ModalContent, ModalFooter, ModalHeader } from "../Shared/components/Modal";
 import { Accordion, AccordionItem } from "../Shared/components/Accordion";
-import { BrokerConfig, BrokerSessionOptions } from "../Shared/interfaces";
+import { BrokerAuthScheme, BrokerConfig, BrokerSessionOptions } from "../Shared/interfaces";
 import { BROKER_FIELD_LIMITS } from "../Shared/constants";
 import { validateBrokerUrl } from "../Shared/brokerValidation";
 import { host } from "../Shared/host";
@@ -22,6 +22,7 @@ interface FormState {
   title: string;
   url: string;
   vpn: string;
+  authScheme: BrokerAuthScheme;
   username: string;
   password: string;
   savePassword: boolean;
@@ -42,6 +43,7 @@ const toForm = (config: BrokerConfig | null): FormState => {
     title: config?.title ?? "",
     url: config?.url ?? "",
     vpn: config?.vpn ?? "",
+    authScheme: config?.authScheme === "clientCertificate" ? "clientCertificate" : "basic",
     username: config?.username ?? "",
     // Saved passwords stay in SecretStorage and are never shown.
     password: config?.password ?? "",
@@ -103,13 +105,16 @@ const ConfigModal = ({
 
   const isEdit = !!initialConfig?.id;
   const hasSavedPassword = isEdit && initialConfig?.hasPassword === true;
+  const clientCertificate = form.authScheme === "clientCertificate";
 
-  const urlError = form.url.trim() ? validateBrokerUrl(form.url) : null;
+  const urlError = form.url.trim() ? validateBrokerUrl(form.url, { secureOnly: clientCertificate }) : null;
   const vpnError = form.vpn.trim().length > BROKER_FIELD_LIMITS.vpn ? `At most ${BROKER_FIELD_LIMITS.vpn} characters.` : null;
   const userError =
     form.username.trim().length > BROKER_FIELD_LIMITS.username ? `At most ${BROKER_FIELD_LIMITS.username} characters.` : null;
   const passwordError =
-    form.password.length > BROKER_FIELD_LIMITS.password ? `At most ${BROKER_FIELD_LIMITS.password} characters.` : null;
+    !clientCertificate && form.password.length > BROKER_FIELD_LIMITS.password
+      ? `At most ${BROKER_FIELD_LIMITS.password} characters.`
+      : null;
   const clientNameError =
     form.clientName.trim().length > BROKER_FIELD_LIMITS.clientName ? `At most ${BROKER_FIELD_LIMITS.clientName} characters.` : null;
   const connectTimeout = intOrUndefined(form.connectTimeout, 100);
@@ -121,7 +126,8 @@ const ConfigModal = ({
     !form.title.trim() ||
     !form.url.trim() ||
     !form.vpn.trim() ||
-    !form.username.trim() ||
+    // With a client certificate the broker can take the username from the certificate.
+    (!clientCertificate && !form.username.trim()) ||
     !!(urlError || vpnError || userError || passwordError || clientNameError) ||
     !!(connectTimeout.error || connectRetries.error || reconnectRetries.error || reconnectWait.error);
 
@@ -142,7 +148,8 @@ const ConfigModal = ({
       url: form.url.split(",").map((u) => u.trim()).filter(Boolean).join(","),
       vpn: form.vpn.trim(),
       username: form.username.trim(),
-      savePassword: form.savePassword ? undefined : false,
+      authScheme: clientCertificate ? "clientCertificate" : undefined,
+      savePassword: clientCertificate || form.savePassword ? undefined : false,
       sessionOptions: hasOptions ? JSON.parse(JSON.stringify(sessionOptions)) : undefined,
     };
   };
@@ -152,8 +159,8 @@ const ConfigModal = ({
     setTesting(true);
     setTestResult(null);
     try {
-      let password = form.password;
-      if (!password && form.savePassword && hasSavedPassword && !form.clearPassword) {
+      let password = clientCertificate ? "" : form.password;
+      if (!clientCertificate && !password && form.savePassword && hasSavedPassword && !form.clearPassword) {
         password = (await host.request<string | undefined>("secrets/getBrokerPassword", { id: initialConfig!.id })) ?? "";
       }
       const result = await testConnection({ ...buildBroker(), id: initialConfig?.id ?? "test" }, password, env?.remoteName);
@@ -180,7 +187,7 @@ const ConfigModal = ({
               <Input
                 type="text"
                 label="URL"
-                placeholder="ws://localhost:8008"
+                placeholder={clientCertificate ? "wss://broker.example.com:443" : "ws://localhost:8008"}
                 description="Web transport URL. Separate several hosts with commas for failover."
                 value={form.url}
                 onValueChange={(v) => set("url", v)}
@@ -197,54 +204,89 @@ const ConfigModal = ({
                 errorMessage={vpnError}
                 isRequired
               />
+              <RadioGroup
+                label="Authentication"
+                orientation="horizontal"
+                size="sm"
+                value={form.authScheme}
+                onValueChange={(v) => set("authScheme", v as BrokerAuthScheme)}
+              >
+                <Radio value="basic">Username and password</Radio>
+                <Radio value="clientCertificate">Client certificate</Radio>
+              </RadioGroup>
+              {clientCertificate && (
+                <div className="text-xs text-default-500 -mt-2 flex flex-col gap-1">
+                  <p>
+                    VS Code presents a client certificate from your operating system&apos;s certificate store
+                    during the TLS handshake: Keychain on macOS, the personal certificate store on Windows, the
+                    NSS database (~/.pki/nssdb) on Linux. Install the certificate together with its private key.
+                    If several certificates match the CAs the broker asks for, the first one is used.
+                  </p>
+                  <p>
+                    On macOS, allow VS Code to use the key when asked. To choose between several certificates, add
+                    an identity preference for https://&lt;broker host&gt; to the certificate in Keychain Access.
+                  </p>
+                  <p>Certificate and key files (PFX, PEM) cannot be selected here.</p>
+                  {hasSavedPassword && <p className="text-warning">The saved password is removed when you save.</p>}
+                </div>
+              )}
               <Input
                 type="text"
                 label="Username"
+                description={
+                  clientCertificate
+                    ? "Optional. Leave empty to use the username the broker takes from the certificate (its common name by default)."
+                    : undefined
+                }
                 value={form.username}
                 onValueChange={(v) => set("username", v)}
                 isInvalid={!!userError}
                 errorMessage={userError}
-                isRequired
+                isRequired={!clientCertificate}
               />
-              <Input
-                type={visiblePassword ? "text" : "password"}
-                endContent={
-                  <button
-                    className="focus:outline-none"
-                    type="button"
-                    onClick={() => setVisiblePassword(!visiblePassword)}
-                    aria-label="toggle password visibility"
-                  >
-                    {visiblePassword ? (
-                      <EyeOff className="text-2xl text-default-400 pointer-events-none" />
-                    ) : (
-                      <Eye className="text-2xl text-default-400 pointer-events-none" />
+              {!clientCertificate && (
+                <>
+                  <Input
+                    type={visiblePassword ? "text" : "password"}
+                    endContent={
+                      <button
+                        className="focus:outline-none"
+                        type="button"
+                        onClick={() => setVisiblePassword(!visiblePassword)}
+                        aria-label="toggle password visibility"
+                      >
+                        {visiblePassword ? (
+                          <EyeOff className="text-2xl text-default-400 pointer-events-none" />
+                        ) : (
+                          <Eye className="text-2xl text-default-400 pointer-events-none" />
+                        )}
+                      </button>
+                    }
+                    label="Password"
+                    placeholder={hasSavedPassword && !form.clearPassword ? "Saved. Leave empty to keep it." : undefined}
+                    description={
+                      form.savePassword
+                        ? "Saved in your operating system's keychain via VS Code SecretStorage."
+                        : "Not saved: used for Test connection only. You will be asked for it when connecting."
+                    }
+                    value={form.password}
+                    onValueChange={(v) => set("password", v)}
+                    isDisabled={form.savePassword && form.clearPassword}
+                    isInvalid={!!passwordError}
+                    errorMessage={passwordError}
+                  />
+                  <div className="flex flex-wrap gap-4">
+                    <Switch size="sm" isSelected={form.savePassword} onValueChange={(v) => set("savePassword", v)}>
+                      Save password
+                    </Switch>
+                    {hasSavedPassword && form.savePassword && (
+                      <Checkbox size="sm" isSelected={form.clearPassword} onValueChange={(v) => set("clearPassword", v)}>
+                        Remove saved password
+                      </Checkbox>
                     )}
-                  </button>
-                }
-                label="Password"
-                placeholder={hasSavedPassword && !form.clearPassword ? "Saved. Leave empty to keep it." : undefined}
-                description={
-                  form.savePassword
-                    ? "Saved in your operating system's keychain via VS Code SecretStorage."
-                    : "Not saved: used for Test connection only. You will be asked for it when connecting."
-                }
-                value={form.password}
-                onValueChange={(v) => set("password", v)}
-                isDisabled={form.savePassword && form.clearPassword}
-                isInvalid={!!passwordError}
-                errorMessage={passwordError}
-              />
-              <div className="flex flex-wrap gap-4">
-                <Switch size="sm" isSelected={form.savePassword} onValueChange={(v) => set("savePassword", v)}>
-                  Save password
-                </Switch>
-                {hasSavedPassword && form.savePassword && (
-                  <Checkbox size="sm" isSelected={form.clearPassword} onValueChange={(v) => set("clearPassword", v)}>
-                    Remove saved password
-                  </Checkbox>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
               <Accordion isCompact>
                 <AccordionItem key="advanced" aria-label="advanced session settings" subtitle="Advanced session settings">
                   <div className="flex flex-col gap-3 pl-1">
@@ -363,9 +405,9 @@ const ConfigModal = ({
                 onPress={() => {
                   const broker = buildBroker();
                   const edit: BrokerEdit = { broker };
-                  if (form.clearPassword) {
+                  if (form.clearPassword || (clientCertificate && hasSavedPassword)) {
                     edit.clearPassword = true;
-                  } else if (form.savePassword && (form.password || !hasSavedPassword)) {
+                  } else if (!clientCertificate && form.savePassword && (form.password || !hasSavedPassword)) {
                     edit.password = form.password;
                   }
                   setTestResult(null);

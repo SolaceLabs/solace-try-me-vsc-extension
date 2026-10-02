@@ -25,6 +25,8 @@ export interface StoredBroker {
    */
   passwordMigrationSession?: string;
   savePassword?: boolean;
+  /** "clientCertificate", or absent for username and password. */
+  authScheme?: string;
   sessionOptions?: Record<string, unknown>;
   [key: string]: unknown;
 }

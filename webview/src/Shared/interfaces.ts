@@ -15,13 +15,23 @@ export interface BrokerSessionOptions {
   forwardLoopbackInRemote?: boolean;
 }
 
+/**
+ * - "basic": username and password.
+ * - "clientCertificate": a client certificate from the operating system's certificate store,
+ *   which VS Code presents during the TLS handshake. Needs a wss:// or https:// URL.
+ */
+export type BrokerAuthScheme = "basic" | "clientCertificate";
+
 export interface BrokerConfig {
   id: string;
   title: string;
   /** One URL, or a comma-separated host list for failover. */
   url: string;
   vpn: string;
+  /** Optional with client certificates: the broker then takes the username from the certificate. */
   username: string;
+  /** Absent means "basic", so profiles saved by older versions keep working. */
+  authScheme?: BrokerAuthScheme;
   /**
    * Only set transiently: when the webview sends a new or changed password to the host,
    * or for profiles that have not been migrated yet. Saved passwords live in VS Code SecretStorage.

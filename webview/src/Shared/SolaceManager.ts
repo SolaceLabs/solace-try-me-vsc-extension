@@ -355,10 +355,12 @@ class SolaceManager {
     this.clientName = undefined;
     this.setState({ status: ConnectionStatus.CONNECTING });
 
+    const clientCertificate = broker.authScheme === "clientCertificate";
     const hintContext = {
       url,
       isDefaultLocalhost: broker.id === DEFAULT_LOCALHOST_BROKER_ID,
       remoteName,
+      clientCertificate,
     };
     const fail = (error: unknown, reason: DisconnectReason) => {
       const text = describeError(error);
@@ -377,8 +379,14 @@ class SolaceManager {
       const properties = new solace.SessionProperties({
         url: urls.length > 1 ? urls : urls[0] ?? "",
         vpnName: broker.vpn.trim(),
+        // With a client certificate, an empty username lets the broker take it from the certificate.
         userName: broker.username.trim(),
-        password,
+        // The browser build has no certificate properties: VS Code (Chromium) picks the certificate
+        // from the OS store when the broker asks for one in the TLS handshake.
+        authenticationScheme: clientCertificate
+          ? solace.AuthenticationScheme.CLIENT_CERTIFICATE
+          : solace.AuthenticationScheme.BASIC,
+        password: clientCertificate ? undefined : password,
         clientName: buildClientName(options.clientName, this.role),
         applicationDescription: "Solace Try Me (VS Code)",
         connectTimeoutInMsecs: options.connectTimeoutInMsecs ?? 10000,

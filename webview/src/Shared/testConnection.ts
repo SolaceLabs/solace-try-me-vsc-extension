@@ -1,6 +1,7 @@
 import SolaceManager, { ConnectionInfo, ConnectionStatus } from "./SolaceManager";
 import { BrokerConfig } from "./interfaces";
 import { host } from "./host";
+import { selectClientCertificate } from "./clientCertificate";
 
 export interface TestConnectionResult {
   ok: boolean;
@@ -22,6 +23,9 @@ export async function testConnection(
       forward: broker.sessionOptions?.forwardLoopbackInRemote === true,
     })
     .catch(() => broker.url);
+  if (broker.authScheme === "clientCertificate") {
+    await selectClientCertificate(url);
+  }
   const manager = new SolaceManager("subscribe", 0);
   const started = performance.now();
   return new Promise((resolve) => {

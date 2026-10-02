@@ -23,6 +23,7 @@ import { usePreferences } from "./SettingsContext";
 import { usePersistentState } from "../usePersistentState";
 import { host } from "../host";
 import { logger } from "../logger";
+import { selectClientCertificate } from "../clientCertificate";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "./Modal";
 
 interface ConnectionManagerProps {
@@ -38,7 +39,13 @@ const CLICK_GUARD_MS = 400;
 
 const sessionOptionsKey = (broker?: BrokerConfig) =>
   broker
-    ? JSON.stringify([broker.url, broker.vpn, broker.username, broker.sessionOptions ?? null])
+    ? JSON.stringify([
+        broker.url,
+        broker.vpn,
+        broker.username,
+        broker.authScheme ?? "basic",
+        broker.sessionOptions ?? null,
+      ])
     : "";
 
 const ConnectionManager = ({
@@ -137,7 +144,10 @@ const ConnectionManager = ({
     setPreparing(true);
     try {
       let password: string | null | undefined;
-      if (selected.savePassword === false) {
+      if (selected.authScheme === "clientCertificate") {
+        // The certificate from the OS store replaces the password.
+        password = "";
+      } else if (selected.savePassword === false) {
         password = promptedPasswords.current.get(selected.id) ?? (await askPassword(selected));
         if (password === null || cancelled()) return;
         promptedPasswords.current.set(selected.id, password);
@@ -157,6 +167,10 @@ const ConnectionManager = ({
         })
         .catch(() => selected.url);
       if (cancelled()) return;
+      if (selected.authScheme === "clientCertificate") {
+        await selectClientCertificate(url);
+        if (cancelled()) return;
+      }
       setConnectedConfigKey(sessionOptionsKey(selected));
       manager.connect({
         broker: selected,

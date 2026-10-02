@@ -34,6 +34,7 @@ Solace Try Me VSC Extension is a Visual Studio Code extension that allows you to
 **Connections**
 - Broker profiles with host lists for failover, client name and reconnect settings, and a **Test connection** button.
 - Passwords are stored in your operating system's keychain (VS Code SecretStorage), or requested on every connect.
+- **Client certificate authentication** (preview) over `wss://`: VS Code presents a certificate from your operating system's certificate store (Keychain on macOS, the personal certificate store on Windows, the NSS database `~/.pki/nssdb` on Linux). The username can come from the certificate.
 - Automatic reconnects re-apply subscriptions. A status bar item shows open connections, and you are notified when one drops.
 - Clear connection errors with hints, a "Solace Try Me" output channel (**Show Logs**) and **Copy Diagnostics** for bug reports.
 
@@ -54,6 +55,11 @@ To run this extension locally, follow the instructions in the [DEVELOPMENT.md](D
 
 - Connections are opened from VS Code's webview, so `tcp://` and `tcps://` URLs cannot be used, and TLS brokers need a certificate trusted by your operating system (self-signed certificates are rejected).
 - In remote windows (SSH, WSL, Dev Containers, Codespaces) the connection opens from your local machine. If the broker runs in the remote workspace, turn on **Forward through VS Code in remote windows** in the broker profile's advanced settings.
+- Client certificate authentication only uses certificates installed, with their private key, in your operating system's certificate store. Certificate and key files (PFX, PEM) cannot be selected, and there is no certificate picker:
+  - VS Code uses the first certificate that matches the CAs the broker asks for, and can keep using it for that broker host until VS Code restarts. Solace brokers may not send a list of accepted CAs, and then every installed client certificate matches, so with several installed the first one may not be the one you want. On macOS you can choose the certificate for a broker with an identity preference: in Keychain Access, right-click the certificate, choose **New Identity Preference**, and enter `https://<broker host>` (or run `security set-identity-preference -c "<certificate name>" -s https://<broker host>`).
+  - macOS asks whether VS Code may use the certificate's private key. Enter your login keychain password and choose **Always Allow**; if you deny it, the connection fails.
+  - If a client certificate identity is installed in the macOS System keychain (e.g. by FortiClient or device management), macOS can ask for an administrator name and password ("Code wants to use the System keychain") each time VS Code looks up client certificates, and the connection times out meanwhile. This prompt comes from macOS and cannot be turned off by the extension.
+  - The broker's own certificate must be trusted by your operating system.
 - Consuming a queue acknowledges, and therefore removes, every message it receives. Use **Browse** to inspect a queue without changing it.
 
 You can report other issues on the GitHub repository.
